@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Calendar,
   DollarSign,
@@ -25,14 +25,22 @@ import {
   MapPin,
   Check,
   Send,
+  LogIn,
+  LogOut,
+  UserPlus,
+  User as UserIcon,
+  Lock,
+  Mail,
+  Home,
   AlertCircle
 } from "lucide-react";
 import {
   EventItem,
   LedgerItem,
-  LedgerSummaryData,
   VendorItem,
-  MeetingItem
+  MeetingItem,
+  User,
+  API_BASE_URL
 } from "@/lib/api";
 
 // Initial Demo Seed Data
@@ -74,8 +82,8 @@ const INITIAL_EVENTS: EventItem[] = [
       {
         id: "r-3",
         event_id: "ev-1",
-        member_name: "Suresh Menon",
-        flat_number: "C-301",
+        member_name: "Priya Patel",
+        flat_number: "B-201",
         attendees_count: 2,
         total_amount: 900,
         utr_number: "UPI-7728193821",
@@ -270,13 +278,27 @@ Discussions & Decisions:
 ];
 
 export default function HomePage() {
-  // Navigation & Role State
+  // Navigation State
   const [activeTab, setActiveTab] = useState<"overview" | "events" | "ledger" | "vendors" | "meetings">("overview");
-  const [userRole, setUserRole] = useState<"member" | "admin">("admin");
-  const [currentUser] = useState({
-    name: userRole === "admin" ? "Rajesh Sharma (Secretary)" : "Priya Patel",
-    flat: userRole === "admin" ? "A-402" : "B-201"
+
+  // Authentication State
+  const [currentUser, setCurrentUser] = useState<User | null>({
+    id: "usr-admin",
+    email: "admin@residenthub.local",
+    full_name: "Rajesh Sharma (Secretary)",
+    flat_number: "A-402",
+    role: "admin"
   });
+
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [authMode, setAuthMode] = useState<"login" | "signup">("login");
+  const [authEmail, setAuthEmail] = useState("");
+  const [authPassword, setAuthPassword] = useState("");
+  const [authFullName, setAuthFullName] = useState("");
+  const [authFlatNumber, setAuthFlatNumber] = useState("");
+  const [authPhoneNumber, setAuthPhoneNumber] = useState("");
+  const [authRole, setAuthRole] = useState<"member" | "admin">("member");
+  const [authError, setAuthError] = useState("");
 
   // Data States
   const [events, setEvents] = useState<EventItem[]>(INITIAL_EVENTS);
@@ -337,21 +359,130 @@ export default function HomePage() {
   const totalExpense = ledger.filter(t => t.transaction_type === "expense").reduce((acc, t) => acc + t.amount, 0);
   const netBalance = totalIncome - totalExpense;
 
-  // Handlers
+  // Authentication Handlers
+  const handleAuthSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setAuthError("");
+
+    if (authMode === "login") {
+      try {
+        // Attempt backend login
+        const res = await fetch(`${API_BASE_URL}/auth/login`, {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body: new URLSearchParams({ username: authEmail, password: authPassword })
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setCurrentUser(data.user);
+          setShowAuthModal(false);
+          return;
+        }
+      } catch (err) {
+        // Fallback for local demo simulation
+      }
+
+      // Check demo presets or local accounts
+      if (authEmail === "admin@residenthub.local" || authEmail.includes("admin")) {
+        setCurrentUser({
+          id: "usr-admin",
+          email: authEmail || "admin@residenthub.local",
+          full_name: "Rajesh Sharma (Secretary)",
+          flat_number: "A-402",
+          role: "admin"
+        });
+        setShowAuthModal(false);
+      } else {
+        setCurrentUser({
+          id: "usr-member-" + Date.now(),
+          email: authEmail,
+          full_name: authFullName || "Resident Member",
+          flat_number: authFlatNumber || "B-201",
+          role: "member"
+        });
+        setShowAuthModal(false);
+      }
+    } else {
+      // Sign Up Handler
+      try {
+        const res = await fetch(`${API_BASE_URL}/auth/register`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email: authEmail,
+            password: authPassword,
+            full_name: authFullName,
+            flat_number: authFlatNumber,
+            phone_number: authPhoneNumber,
+            role: authRole
+          })
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setCurrentUser(data.user);
+          setShowAuthModal(false);
+          return;
+        } else {
+          const errData = await res.json();
+          setAuthError(errData.detail || "Registration failed. Try demo login.");
+        }
+      } catch (err) {
+        // Local simulation fallback
+        setCurrentUser({
+          id: "usr-" + Date.now(),
+          email: authEmail,
+          full_name: authFullName,
+          flat_number: authFlatNumber,
+          phone_number: authPhoneNumber,
+          role: authRole
+        });
+        setShowAuthModal(false);
+      }
+    }
+  };
+
+  const handleQuickDemoLogin = (role: "admin" | "member") => {
+    if (role === "admin") {
+      setCurrentUser({
+        id: "usr-admin",
+        email: "admin@residenthub.local",
+        full_name: "Rajesh Sharma (Secretary)",
+        flat_number: "A-402",
+        phone_number: "+91 98765 43210",
+        role: "admin"
+      });
+    } else {
+      setCurrentUser({
+        id: "usr-member",
+        email: "member@residenthub.local",
+        full_name: "Priya Patel",
+        flat_number: "B-201",
+        phone_number: "+91 98111 22334",
+        role: "member"
+      });
+    }
+    setShowAuthModal(false);
+  };
+
+  // RSVP Submission Handler
   const handleRsvpSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedEventForRsvp) return;
+    if (!currentUser) {
+      setShowAuthModal(true);
+      return;
+    }
 
     const totalAmt = rsvpAttendeesCount * selectedEventForRsvp.fee_per_person;
     const newRsvp = {
       id: "r-" + Date.now(),
       event_id: selectedEventForRsvp.id,
-      member_name: currentUser.name,
-      flat_number: currentUser.flat,
+      member_name: currentUser.full_name,
+      flat_number: currentUser.flat_number,
       attendees_count: rsvpAttendeesCount,
       total_amount: totalAmt,
       utr_number: rsvpUtrNumber || "UPI-" + Math.floor(1000000000 + Math.random() * 9000000000),
-      status: (userRole === "admin" ? "approved" : "pending") as "pending" | "approved",
+      status: (currentUser.role === "admin" ? "approved" : "pending") as "pending" | "approved",
       created_at: new Date().toISOString()
     };
 
@@ -463,8 +594,8 @@ export default function HomePage() {
 
     const newRev = {
       id: "rev-" + Date.now(),
-      user_name: currentUser.name,
-      flat_number: currentUser.flat,
+      user_name: currentUser?.full_name || "Resident",
+      flat_number: currentUser?.flat_number || "Unit",
       rating: newRating,
       comment: newComment,
       created_at: new Date().toISOString().split("T")[0]
@@ -494,15 +625,13 @@ export default function HomePage() {
     setIsProcessingAi(true);
 
     setTimeout(() => {
-      // Deterministic Extractor Execution
       const lines = rawTranscriptText.split("\n").filter(l => l.trim().length > 0);
       const resolutions: any[] = [];
       const budgets: any[] = [];
       const actionItems: any[] = [];
 
-      lines.forEach((line, idx) => {
+      lines.forEach((line) => {
         const lower = line.toLowerCase();
-        // Check budget / money
         const amountMatch = line.match(/(?:rs\.?|inr|₹|\$)\s*([\d,]+(?:\.\d+)?)/i) || line.match(/([\d,]+)\s*(?:rupees|lakh)/i);
         if ((lower.includes("approved") || lower.includes("budget") || lower.includes("cost") || lower.includes("amc")) && amountMatch) {
           const rawNum = amountMatch[1].replace(/,/g, "");
@@ -532,7 +661,6 @@ export default function HomePage() {
         }
       });
 
-      // Guarantee deterministic fallback if no explicit keywords
       if (resolutions.length === 0) {
         resolutions.push({
           id: "RES-01",
@@ -592,7 +720,6 @@ export default function HomePage() {
       const qLower = userQ.toLowerCase();
       let botResponse = "";
 
-      // Smart semantic matching across meetings & vendors
       if (qLower.includes("lift") || qLower.includes("elevator")) {
         botResponse = "📌 **Lift AMC & Repairs:**\nIn the Committee Meeting (19 July 2026), the committee unanimously approved the renewal of the quarterly Lift Maintenance contract with **Schindler India** for **₹18,000** (Resolution RES-01 / Budget BUD-01).";
       } else if (qLower.includes("paint") || qLower.includes("exterior")) {
@@ -636,37 +763,67 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* Role Switcher & User Profile */}
+          {/* User Account Controls */}
           <div className="flex items-center space-x-3">
-            <div className="bg-slate-100 p-1 rounded-lg border border-slate-200 flex items-center text-xs">
-              <button
-                onClick={() => setUserRole("member")}
-                className={`px-2.5 py-1 rounded-md font-semibold transition ${
-                  userRole === "member" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-900"
-                }`}
-              >
-                Resident
-              </button>
-              <button
-                onClick={() => setUserRole("admin")}
-                className={`px-2.5 py-1 rounded-md font-semibold transition flex items-center space-x-1 ${
-                  userRole === "admin" ? "bg-brand-600 text-white shadow-sm" : "text-slate-500 hover:text-slate-900"
-                }`}
-              >
-                <Shield className="w-3 h-3" />
-                <span>Admin</span>
-              </button>
-            </div>
+            {currentUser ? (
+              <div className="flex items-center space-x-3">
+                {/* Role Switcher Pill */}
+                <div className="bg-slate-100 p-1 rounded-lg border border-slate-200 flex items-center text-xs">
+                  <button
+                    onClick={() => handleQuickDemoLogin("member")}
+                    className={`px-2.5 py-1 rounded-md font-semibold transition ${
+                      currentUser.role === "member" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-900"
+                    }`}
+                  >
+                    Resident
+                  </button>
+                  <button
+                    onClick={() => handleQuickDemoLogin("admin")}
+                    className={`px-2.5 py-1 rounded-md font-semibold transition flex items-center space-x-1 ${
+                      currentUser.role === "admin" ? "bg-brand-600 text-white shadow-sm" : "text-slate-500 hover:text-slate-900"
+                    }`}
+                  >
+                    <Shield className="w-3 h-3" />
+                    <span>Admin</span>
+                  </button>
+                </div>
 
-            <div className="hidden sm:flex items-center space-x-2 pl-2 border-l border-slate-200">
-              <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-800 font-bold flex items-center justify-center text-xs">
-                {currentUser.flat}
+                {/* Profile Badge */}
+                <div className="flex items-center space-x-2 pl-2 border-l border-slate-200">
+                  <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-800 font-bold flex items-center justify-center text-xs">
+                    {currentUser.flat_number}
+                  </div>
+                  <div className="hidden sm:block text-left">
+                    <p className="text-xs font-semibold text-slate-800 leading-none">{currentUser.full_name}</p>
+                    <p className="text-[10px] text-slate-500 mt-0.5">{currentUser.email}</p>
+                  </div>
+                  <button
+                    onClick={() => setCurrentUser(null)}
+                    className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition"
+                    title="Log Out"
+                  >
+                    <LogOut className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
-              <div className="text-left">
-                <p className="text-xs font-semibold text-slate-800 leading-none">{currentUser.name}</p>
-                <p className="text-[10px] text-slate-500 mt-0.5">Unit {currentUser.flat}</p>
+            ) : (
+              <div className="flex items-center space-x-2">
+                <button
+                  onClick={() => { setAuthMode("login"); setShowAuthModal(true); }}
+                  className="px-3.5 py-1.5 text-slate-700 hover:bg-slate-100 text-xs font-bold rounded-xl transition flex items-center space-x-1.5"
+                >
+                  <LogIn className="w-4 h-4" />
+                  <span>Log In</span>
+                </button>
+                <button
+                  onClick={() => { setAuthMode("signup"); setShowAuthModal(true); }}
+                  className="px-3.5 py-1.5 bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold rounded-xl shadow-sm transition flex items-center space-x-1.5"
+                >
+                  <UserPlus className="w-4 h-4" />
+                  <span>Sign Up</span>
+                </button>
               </div>
-            </div>
+            )}
           </div>
         </div>
 
@@ -694,7 +851,7 @@ export default function HomePage() {
                 >
                   <Icon className="w-4 h-4" />
                   <span>{tab.label}</span>
-                  {tab.badge && tab.badge > 0 && userRole === "admin" ? (
+                  {tab.badge && tab.badge > 0 && currentUser?.role === "admin" ? (
                     <span className="bg-amber-500 text-white text-[10px] px-1.5 py-0.5 rounded-full font-bold">
                       {tab.badge}
                     </span>
@@ -865,7 +1022,7 @@ export default function HomePage() {
                 <h2 className="text-xl font-extrabold text-slate-900">Events Hub & RSVP</h2>
                 <p className="text-xs text-slate-500">Register for community events, submit UPI payment proofs, and view verified attendee lists.</p>
               </div>
-              {userRole === "admin" && (
+              {currentUser?.role === "admin" && (
                 <button
                   onClick={() => setShowNewEventModal(true)}
                   className="px-4 py-2.5 bg-brand-600 hover:bg-brand-700 text-white text-xs sm:text-sm font-bold rounded-xl shadow-md transition flex items-center space-x-1.5 self-start sm:self-auto"
@@ -879,7 +1036,7 @@ export default function HomePage() {
             {/* Event Cards Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {events.map(ev => {
-                const myRsvp = ev.rsvps?.find(r => r.flat_number === currentUser.flat);
+                const myRsvp = ev.rsvps?.find(r => r.flat_number === currentUser?.flat_number);
                 return (
                   <div key={ev.id} className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col justify-between">
                     <div className="p-6">
@@ -928,7 +1085,7 @@ export default function HomePage() {
                         </button>
                       )}
 
-                      {userRole === "admin" && (
+                      {currentUser?.role === "admin" && (
                         <button
                           onClick={() => handleExportCsv(ev)}
                           className="px-3 py-2 bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 font-semibold text-xs rounded-xl transition flex items-center space-x-1.5"
@@ -941,7 +1098,7 @@ export default function HomePage() {
                     </div>
 
                     {/* Admin Verification Drawer / Table */}
-                    {userRole === "admin" && ev.rsvps && ev.rsvps.length > 0 && (
+                    {currentUser?.role === "admin" && ev.rsvps && ev.rsvps.length > 0 && (
                       <div className="p-4 bg-slate-100 border-t border-slate-200">
                         <div className="flex items-center justify-between mb-2">
                           <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider">
@@ -1007,7 +1164,7 @@ export default function HomePage() {
                 <h2 className="text-xl font-extrabold text-slate-900">Transparent Society Financial Ledger</h2>
                 <p className="text-xs text-slate-500">Live view of society maintenance collections, audited expenses, and vendor invoice receipts.</p>
               </div>
-              {userRole === "admin" && (
+              {currentUser?.role === "admin" && (
                 <button
                   onClick={() => setShowNewTxModal(true)}
                   className="px-4 py-2.5 bg-brand-600 hover:bg-brand-700 text-white text-xs sm:text-sm font-bold rounded-xl shadow-md transition flex items-center space-x-1.5 self-start sm:self-auto"
@@ -1222,7 +1379,7 @@ export default function HomePage() {
               <div className="lg:col-span-7 space-y-6">
                 
                 {/* Admin Minutes Ingestion Box */}
-                {userRole === "admin" && (
+                {currentUser?.role === "admin" && (
                   <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4">
                     <div className="flex items-center justify-between">
                       <h3 className="font-bold text-slate-900 text-sm flex items-center space-x-1.5">
@@ -1478,6 +1635,193 @@ export default function HomePage() {
       </main>
 
       {/* ======================================================== */}
+      {/* MODAL: AUTHENTICATION (LOGIN & SIGN UP) */}
+      {/* ======================================================== */}
+      {showAuthModal && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-7 shadow-2xl border border-slate-200 space-y-4">
+            
+            {/* Header with Switcher Tabs */}
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex space-x-2 bg-slate-100 p-1 rounded-xl">
+                <button
+                  onClick={() => { setAuthMode("login"); setAuthError(""); }}
+                  className={`px-4 py-1.5 text-xs font-bold rounded-lg transition ${
+                    authMode === "login" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-800"
+                  }`}
+                >
+                  Log In
+                </button>
+                <button
+                  onClick={() => { setAuthMode("signup"); setAuthError(""); }}
+                  className={`px-4 py-1.5 text-xs font-bold rounded-lg transition ${
+                    authMode === "signup" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-800"
+                  }`}
+                >
+                  Sign Up (New Resident)
+                </button>
+              </div>
+              <button onClick={() => setShowAuthModal(false)} className="text-slate-400 hover:text-slate-600">
+                <XCircle className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Quick 1-Click Demo Logins */}
+            {authMode === "login" && (
+              <div className="p-3 bg-brand-50/70 border border-brand-200 rounded-2xl space-y-2">
+                <p className="text-[10px] font-bold text-brand-900 uppercase tracking-wider">Quick Demo 1-Click Switcher</p>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => handleQuickDemoLogin("admin")}
+                    className="p-2 rounded-xl bg-white border border-brand-200 hover:border-brand-500 text-left text-xs transition"
+                  >
+                    <div className="font-bold text-slate-900 flex items-center space-x-1">
+                      <Shield className="w-3.5 h-3.5 text-brand-600" />
+                      <span>Secretary</span>
+                    </div>
+                    <p className="text-[10px] text-slate-500 mt-0.5">Unit A-402 (Admin)</p>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleQuickDemoLogin("member")}
+                    className="p-2 rounded-xl bg-white border border-brand-200 hover:border-brand-500 text-left text-xs transition"
+                  >
+                    <div className="font-bold text-slate-900 flex items-center space-x-1">
+                      <UserIcon className="w-3.5 h-3.5 text-emerald-600" />
+                      <span>Resident</span>
+                    </div>
+                    <p className="text-[10px] text-slate-500 mt-0.5">Priya (Unit B-201)</p>
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {authError && (
+              <div className="p-2.5 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-700 flex items-center space-x-1.5">
+                <AlertCircle className="w-4 h-4 shrink-0" />
+                <span>{authError}</span>
+              </div>
+            )}
+
+            {/* Main Form */}
+            <form onSubmit={handleAuthSubmit} className="space-y-3 text-xs">
+              {authMode === "signup" && (
+                <>
+                  <div>
+                    <label className="font-bold text-slate-700">Full Name</label>
+                    <div className="relative mt-1">
+                      <UserIcon className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
+                      <input
+                        type="text"
+                        required
+                        placeholder="e.g. Rahul Sharma"
+                        value={authFullName}
+                        onChange={e => setAuthFullName(e.target.value)}
+                        className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="font-bold text-slate-700">Flat / Unit Number</label>
+                      <div className="relative mt-1">
+                        <Home className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
+                        <input
+                          type="text"
+                          required
+                          placeholder="e.g. C-302"
+                          value={authFlatNumber}
+                          onChange={e => setAuthFlatNumber(e.target.value)}
+                          className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500 uppercase font-semibold"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="font-bold text-slate-700">Phone Number</label>
+                      <div className="relative mt-1">
+                        <Phone className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
+                        <input
+                          type="text"
+                          placeholder="+91 98..."
+                          value={authPhoneNumber}
+                          onChange={e => setAuthPhoneNumber(e.target.value)}
+                          className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="font-bold text-slate-700 block mb-1">Account Role</label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setAuthRole("member")}
+                        className={`p-2 rounded-xl border text-left transition ${
+                          authRole === "member" ? "border-brand-500 bg-brand-50 text-brand-900 font-bold" : "border-slate-200 text-slate-600"
+                        }`}
+                      >
+                        Resident Member
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setAuthRole("admin")}
+                        className={`p-2 rounded-xl border text-left transition ${
+                          authRole === "admin" ? "border-brand-500 bg-brand-50 text-brand-900 font-bold" : "border-slate-200 text-slate-600"
+                        }`}
+                      >
+                        Committee / Admin
+                      </button>
+                    </div>
+                  </div>
+                </>
+              )}
+
+              <div>
+                <label className="font-bold text-slate-700">Email Address</label>
+                <div className="relative mt-1">
+                  <Mail className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
+                  <input
+                    type="email"
+                    required
+                    placeholder="you@residenthub.com"
+                    value={authEmail}
+                    onChange={e => setAuthEmail(e.target.value)}
+                    className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="font-bold text-slate-700">Password</label>
+                <div className="relative mt-1">
+                  <Lock className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
+                  <input
+                    type="password"
+                    required
+                    placeholder="••••••••"
+                    value={authPassword}
+                    onChange={e => setAuthPassword(e.target.value)}
+                    className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500"
+                  />
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                className="w-full py-2.5 bg-brand-600 hover:bg-brand-700 text-white font-bold rounded-xl shadow-md transition text-xs mt-2"
+              >
+                {authMode === "login" ? "Sign In to ResidentHub" : "Create Resident Account"}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ======================================================== */}
       {/* MODAL: EVENT RSVP & PAYMENT PROOF */}
       {/* ======================================================== */}
       {selectedEventForRsvp && (
@@ -1505,7 +1849,7 @@ export default function HomePage() {
                   <input
                     type="text"
                     disabled
-                    value={`${currentUser.name} (Unit ${currentUser.flat})`}
+                    value={currentUser ? `${currentUser.full_name} (Unit ${currentUser.flat_number})` : "Please Sign In First"}
                     className="w-full mt-1 p-2.5 bg-slate-100 border border-slate-200 rounded-xl font-medium text-slate-600"
                   />
                 </div>

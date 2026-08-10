@@ -1,5 +1,21 @@
 export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
 
+export interface User {
+  id: string;
+  email: string;
+  full_name: string;
+  flat_number: string;
+  phone_number?: string;
+  role: "admin" | "member";
+  created_at?: string;
+}
+
+export interface AuthResponse {
+  access_token: string;
+  token_type: string;
+  user: User;
+}
+
 export interface EventItem {
   id: string;
   title: string;
