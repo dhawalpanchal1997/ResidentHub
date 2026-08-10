@@ -1,6 +1,6 @@
-# 🏢 ResidentHub
+# 🏢 ResidentHub — Runwal Gardens (Tower 24)
 
-**ResidentHub** is an all-in-one, AI-augmented community management platform for residential societies. It streamlines event management & payment verification, provides total financial transparency with a view-only ledger, hosts a vetted local vendor directory, and features a deterministic meeting minutes AI extraction engine with conversational RAG Q&A (via Web & Telegram).
+**ResidentHub** is the community management platform and deterministic AI copilot designed specifically for **Tower 24, Runwal Gardens, Dombivli (East)**. It streamlines event management & UPI payment verification, provides 100% financial transparency with a view-only society ledger, hosts vetted Dombivli local worker contacts, and features a deterministic meeting minutes AI extraction engine with conversational RAG Q&A (via Web & Telegram).
 
 Designed with a **$0/Month Zero-Cost Infrastructure Guarantee** using free tiers of modern developer platforms and open-source models.
 

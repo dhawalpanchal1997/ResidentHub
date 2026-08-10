@@ -52,7 +52,7 @@ const INITIAL_EVENTS: EventItem[] = [
     event_date: "2026-11-08T18:30:00",
     venue: "Society Clubhouse & Main Lawn",
     fee_per_person: 450,
-    upi_qr_url: "https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=upi://pay?pa=greenmeadows@upi&pn=GreenMeadowsCHS&am=450",
+    upi_qr_url: "https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=upi://pay?pa=runwal.t24@upi&pn=RunwalGardensT24&am=450",
     rsvps_count: 3,
     total_attendees: 7,
     total_collected: 3150,
@@ -557,7 +557,7 @@ export default function HomePage() {
       event_date: newEventDate || new Date().toISOString(),
       venue: newEventVenue,
       fee_per_person: Number(newEventFee),
-      upi_qr_url: newEventFee > 0 ? `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=upi://pay?pa=greenmeadows@upi&pn=GreenMeadowsCHS&am=${newEventFee}` : undefined,
+      upi_qr_url: newEventFee > 0 ? `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=upi://pay?pa=runwal.t24@upi&pn=RunwalGardensT24&am=${newEventFee}` : undefined,
       rsvps_count: 0,
       total_attendees: 0,
       total_collected: 0,
@@ -758,8 +758,8 @@ export default function HomePage() {
               <Building2 className="w-6 h-6" />
             </div>
             <div>
-              <h1 className="text-lg font-bold text-slate-900 leading-tight">Green Meadows CHS</h1>
-              <p className="text-xs text-slate-500 font-medium">ResidentHub Community Portal</p>
+              <h1 className="text-lg font-bold text-slate-900 leading-tight">Runwal Gardens (Tower 24)</h1>
+              <p className="text-xs text-slate-500 font-medium">Dombivli East Community Portal</p>
             </div>
           </div>
 
@@ -879,10 +879,10 @@ export default function HomePage() {
                   <span>AI-Augmented Community Hub</span>
                 </span>
                 <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
-                  Welcome to Green Meadows Portal
+                  Welcome to Runwal Gardens (Tower 24)
                 </h2>
                 <p className="text-slate-300 text-sm sm:text-base mt-2 leading-relaxed">
-                  One-stop hub for instant event RSVPs with receipt verification, 100% transparent society financials, verified local service contacts, and deterministic AI meeting records.
+                  Dedicated portal for Tower 24 residents: instant event RSVPs with receipt verification, transparent society maintenance ledger, verified Dombivli local contacts, and deterministic AI meeting records.
                 </p>
                 <div className="mt-5 flex flex-wrap gap-3">
                   <button
@@ -1888,7 +1888,7 @@ export default function HomePage() {
                         alt="UPI QR Code"
                         className="w-36 h-36 mx-auto rounded-lg shadow-sm"
                       />
-                      <p className="text-[10px] font-mono text-slate-600 mt-1 font-semibold">greenmeadows@upi</p>
+                      <p className="text-[10px] font-mono text-slate-600 mt-1 font-semibold">runwal.t24@upi</p>
                     </div>
 
                     <div>

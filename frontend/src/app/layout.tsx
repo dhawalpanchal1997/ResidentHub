@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "ResidentHub | Society Management & AI Copilot",
-  description: "All-in-one community management, event RSVP, transparent funds ledger, and deterministic meeting AI copilot.",
+  title: "Runwal Gardens Tower 24 | ResidentHub Society Portal",
+  description: "Official community portal for Tower 24, Runwal Gardens Dombivli. Event RSVPs, transparent maintenance ledger, verified local vendors, and AI meeting records.",
 };
 
 export default function RootLayout({
