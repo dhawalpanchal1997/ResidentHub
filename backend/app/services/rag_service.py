@@ -2,9 +2,11 @@ import logging
 from typing import List, Dict, Any, Optional
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
+from sqlalchemy import text
 from langchain_core.prompts import ChatPromptTemplate
 from app.models.meeting import Meeting, MeetingChunk
 from app.services.ai_factory import get_llm
+from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -16,7 +18,41 @@ Always cite the relevant meeting date and resolution ID if available.
 """
 
 async def answer_society_query(query: str, db: AsyncSession, meeting_id: Optional[str] = None) -> Dict[str, Any]:
-    # 1. Fetch relevant meeting records
+    # 1. Try vector search first for relevant chunks
+    relevant_chunks = await vector_search_chunks(query, db, meeting_id)
+    
+    if relevant_chunks:
+        # Build context from vector search results
+        context_blocks = []
+        sources_set = set()
+        
+        for chunk in relevant_chunks:
+            context_blocks.append(f"[{chunk.category.upper()}] {chunk.content}")
+            sources_set.add((chunk.meeting_title, str(chunk.meeting_date), chunk.meeting_type))
+        
+        full_context = "\n\n".join(context_blocks)
+        sources = [{"title": t[0], "date": t[1], "type": t[2]} for t in sources_set]
+        
+        # Query LLM with vector search context
+        llm = get_llm()
+        if llm is not None:
+            try:
+                prompt = ChatPromptTemplate.from_messages([
+                    ("system", QA_SYSTEM_PROMPT),
+                    ("human", "Society Meeting Context (from semantic search):\n{context}\n\nUser Question: {query}")
+                ])
+                chain = prompt | llm
+                response = await chain.ainvoke({"context": full_context, "query": query})
+                answer_text = response.content if hasattr(response, "content") else str(response)
+                return {
+                    "query": query,
+                    "answer": answer_text,
+                    "sources": sources
+                }
+            except Exception as e:
+                logger.warning(f"RAG LLM error: {e}. Using deterministic context matcher.")
+    
+    # 2. Fallback: Fetch relevant meeting records
     if meeting_id:
         result = await db.execute(select(Meeting).where(Meeting.id == meeting_id))
         meetings = result.scalars().all()
@@ -45,7 +81,7 @@ async def answer_society_query(query: str, db: AsyncSession, meeting_id: Optiona
 
     full_context = "\n\n".join(context_blocks)
 
-    # 2. Query LLM if available
+    # 3. Query LLM if available
     llm = get_llm()
     if llm is not None:
         try:
@@ -64,7 +100,7 @@ async def answer_society_query(query: str, db: AsyncSession, meeting_id: Optiona
         except Exception as e:
             logger.warning(f"RAG LLM error: {e}. Using deterministic context matcher.")
 
-    # 3. Deterministic keyword matching fallback
+    # 4. Deterministic keyword matching fallback
     q_lower = query.lower()
     matched_points = []
     for m in meetings:
@@ -93,3 +129,56 @@ async def answer_society_query(query: str, db: AsyncSession, meeting_id: Optiona
         "answer": answer_text,
         "sources": sources
     }
+
+
+async def vector_search_chunks(query: str, db: AsyncSession, meeting_id: Optional[str] = None) -> List[Any]:
+    """
+    Perform vector similarity search on meeting chunks using pgvector or SQLite fallback.
+    """
+    try:
+        # Generate query embedding
+        from langchain_ollama import OllamaEmbeddings
+        embeddings_model = OllamaEmbeddings(
+            base_url=settings.OLLAMA_BASE_URL,
+            model="nomic-embed-text:latest"
+        )
+        query_embedding = await embeddings_model.aembed_query(query)
+        
+        # Build the query
+        if meeting_id:
+            sql = """
+                SELECT mc.*, m.title as meeting_title, m.meeting_date, m.meeting_type
+                FROM meeting_chunks mc
+                JOIN meetings m ON mc.meeting_id = m.id
+                WHERE m.id = :meeting_id
+                ORDER BY mc.embedding <=> :embedding
+                LIMIT 10
+            """
+        else:
+            sql = """
+                SELECT mc.*, m.title as meeting_title, m.meeting_date, m.meeting_type
+                FROM meeting_chunks mc
+                JOIN meetings m ON mc.meeting_id = m.id
+                WHERE m.is_published = 'published'
+                ORDER BY mc.embedding <=> :embedding
+                LIMIT 10
+            """
+        
+        # Check if we're using PostgreSQL with pgvector
+        conn = await db.execute(text("SELECT 1"))
+        dialect = conn.bind.dialect.name if conn.bind else "sqlite"
+        
+        if dialect == "postgresql":
+            # Use pgvector similarity search
+            result = await db.execute(text(sql), {"meeting_id": meeting_id, "embedding": query_embedding} if meeting_id else {"embedding": query_embedding})
+        else:
+            # SQLite fallback - cosine similarity on JSON embeddings
+            # This is a simplified fallback - in practice you'd need to compute in Python
+            return []
+        
+        chunks = result.mappings().all()
+        return chunks
+        
+    except Exception as e:
+        logger.warning(f"Vector search failed: {e}. Falling back to keyword search.")
+        return []

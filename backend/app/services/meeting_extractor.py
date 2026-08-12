@@ -47,7 +47,8 @@ def extract_meeting_deterministic_fallback(title: str, meeting_date: str, meetin
         lower = line.lower()
         # Detect monetary / budget approvals
         amount_match = re.search(r'(?:rs\.?|inr|₹|\$)\s*([\d,]+(?:\.\d+)?)', line, re.IGNORECASE) or re.search(r'([\d,]+)\s*(?:rupees|lakh|thousand)', line, re.IGNORECASE)
-        if any(w in lower for w in ["budget", "approved rs", "cost", "expenditure", "amc", "repair cost", "quote", "expense"]) and amount_match:
+        budget_keywords = ["budget", "approved rs", "cost", "expenditure", "amc", "repair cost", "quote", "expense", "approved for", "approved rs", "contract"]
+        if any(w in lower for w in budget_keywords) and amount_match:
             raw_amt = amount_match.group(1).replace(",", "")
             try:
                 amt = float(raw_amt)

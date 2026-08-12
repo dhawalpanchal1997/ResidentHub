@@ -1,19 +1,27 @@
 from datetime import datetime
 from typing import Optional
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, field_validator
 
 class UserBase(BaseModel):
-    email: EmailStr
+    email: str
     full_name: str
     flat_number: str
     phone_number: Optional[str] = None
     role: Optional[str] = "member"
+    
+    @field_validator('email')
+    @classmethod
+    def validate_email(cls, v):
+        # Allow .local domains for development
+        if '@' not in v:
+            raise ValueError('Invalid email format')
+        return v
 
 class UserCreate(UserBase):
     password: str
 
 class UserLogin(BaseModel):
-    email: EmailStr
+    email: str
     password: str
 
 class UserResponse(UserBase):
@@ -21,8 +29,7 @@ class UserResponse(UserBase):
     society_id: Optional[str] = None
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = {"from_attributes": True}
 
 class TokenResponse(BaseModel):
     access_token: str

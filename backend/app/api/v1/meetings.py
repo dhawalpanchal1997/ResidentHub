@@ -2,6 +2,7 @@ from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
+import uuid
 
 from app.core.database import get_db
 from app.core.security import get_current_user, get_current_admin
@@ -17,6 +18,9 @@ from app.schemas.meeting import (
 )
 from app.services.meeting_extractor import extract_meeting_summary
 from app.services.rag_service import answer_society_query
+from app.services.ai_factory import get_llm
+from langchain_ollama import OllamaEmbeddings
+from langchain_groq import ChatGroq
 
 router = APIRouter(prefix="/meetings", tags=["Meeting AI & Q&A"])
 
@@ -104,6 +108,9 @@ async def publish_meeting(
     await db.commit()
     await db.refresh(meeting)
 
+    # Create meeting chunks with embeddings for RAG
+    await create_meeting_chunks(meeting, db)
+
     return MeetingResponse(
         id=meeting.id,
         title=meeting.title,
@@ -130,3 +137,98 @@ async def ask_society_ai(
         meeting_id=query_in.meeting_id
     )
     return MeetingQAResponse(**answer_dict)
+
+
+async def create_meeting_chunks(meeting: Meeting, db: AsyncSession):
+    """
+    Create meeting chunks with embeddings for vector search RAG.
+    Chunks are created from structured summary items and raw transcript.
+    """
+    from app.core.config import settings
+    
+    chunks = []
+    
+    # Create chunks from structured summary
+    if meeting.structured_summary:
+        summary = meeting.structured_summary
+        
+        # Resolution chunks
+        for res in summary.get("resolutions", []):
+            content = f"Resolution: {res.get('title', '')}\n{res.get('description', '')}"
+            chunks.append({
+                "chunk_index": f"RES-{res.get('id', '')}",
+                "category": "resolution",
+                "content": content,
+                "metadata": {"resolution_id": res.get('id'), "status": res.get('status')}
+            })
+        
+        # Budget approval chunks
+        for bud in summary.get("budget_approvals", []):
+            content = f"Budget Approval: {bud.get('expense_category', '')}\nVendor: {bud.get('vendor_or_contractor', '')}\nAmount: ₹{bud.get('approved_amount', 0)}\nNotes: {bud.get('notes', '')}"
+            chunks.append({
+                "chunk_index": f"BUD-{bud.get('id', '')}",
+                "category": "budget",
+                "content": content,
+                "metadata": {"budget_id": bud.get('id'), "amount": bud.get('approved_amount')}
+            })
+        
+        # Action item chunks
+        for act in summary.get("action_items", []):
+            content = f"Action Item: {act.get('task', '')}\nAssigned to: {act.get('assigned_to', '')}\nTarget Date: {act.get('target_date', '')}\nPriority: {act.get('priority', '')}"
+            chunks.append({
+                "chunk_index": f"ACT-{act.get('id', '')}",
+                "category": "action_item",
+                "content": content,
+                "metadata": {"action_id": act.get('id'), "assigned_to": act.get('assigned_to')}
+            })
+    
+    # Also chunk the raw transcript for semantic search
+    raw_chunks = meeting.raw_transcript.split("\n\n")
+    for i, chunk in enumerate(raw_chunks):
+        if len(chunk.strip()) > 50:
+            chunks.append({
+                "chunk_index": f"RAW-{i:03d}",
+                "category": "discussion",
+                "content": chunk.strip()[:1000],  # Limit chunk size
+                "metadata": {"chunk_index": i}
+            })
+    
+    if not chunks:
+        return
+    
+    # Generate embeddings
+    embeddings = []
+    try:
+        if settings.LLM_PROVIDER == "groq" and settings.GROQ_API_KEY:
+            # Use Ollama embeddings as Groq doesn't provide embeddings
+            embeddings_model = OllamaEmbeddings(
+                base_url=settings.OLLAMA_BASE_URL,
+                model="nomic-embed-text:latest"
+            )
+        else:
+            embeddings_model = OllamaEmbeddings(
+                base_url=settings.OLLAMA_BASE_URL,
+                model=settings.OLLAMA_MODEL.replace("gemma", "nomic-embed-text")
+            )
+        
+        texts = [c["content"] for c in chunks]
+        embeddings = await embeddings_model.aembed_documents(texts)
+    except Exception as e:
+        print(f"Warning: Could not generate embeddings: {e}")
+        embeddings = [None] * len(chunks)
+    
+    # Save chunks to database
+    for i, chunk_data in enumerate(chunks):
+        embedding = embeddings[i] if i < len(embeddings) else None
+        meeting_chunk = MeetingChunk(
+            id=str(uuid.uuid4()),
+            meeting_id=meeting.id,
+            chunk_index=chunk_data["chunk_index"],
+            category=chunk_data["category"],
+            content=chunk_data["content"],
+            embedding=embedding,
+            metadata=chunk_data["metadata"]
+        )
+        db.add(meeting_chunk)
+    
+    await db.commit()

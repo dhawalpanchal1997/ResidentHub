@@ -4,6 +4,13 @@ from sqlalchemy import Column, String, Text, Date, DateTime, ForeignKey, JSON
 from sqlalchemy.orm import relationship
 from app.core.database import Base
 
+try:
+    from pgvector.sqlalchemy import Vector
+    HAS_PGVECTOR = True
+except ImportError:
+    HAS_PGVECTOR = False
+
+
 class Meeting(Base):
     __tablename__ = "meetings"
 
@@ -22,6 +29,7 @@ class Meeting(Base):
     society = relationship("Society", back_populates="meetings")
     chunks = relationship("MeetingChunk", back_populates="meeting", cascade="all, delete-orphan")
 
+
 class MeetingChunk(Base):
     __tablename__ = "meeting_chunks"
 
@@ -30,6 +38,8 @@ class MeetingChunk(Base):
     chunk_index = Column(String(50), nullable=True)
     category = Column(String(50), nullable=True)  # "resolution", "budget", "action_item", "discussion"
     content = Column(Text, nullable=False)
+    # Embedding column: Vector for PostgreSQL + pgvector, JSON for SQLite
+    embedding = Column(Vector(1536) if HAS_PGVECTOR else JSON, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
     # Relationships

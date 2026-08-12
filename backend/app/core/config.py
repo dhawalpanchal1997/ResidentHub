@@ -1,8 +1,11 @@
 import os
 from typing import Literal, Optional
 from pydantic_settings import BaseSettings
+from pydantic import Field
 
 class Settings(BaseSettings):
+    model_config = {"env_file": ".env", "extra": "allow"}
+    
     PROJECT_NAME: str = "ResidentHub"
     VERSION: str = "1.0.0"
     API_V1_STR: str = "/api/v1"
@@ -29,9 +32,5 @@ class Settings(BaseSettings):
     # Storage & Telegram
     STORAGE_BUCKET: str = "residenthub-receipts"
     TELEGRAM_BOT_TOKEN: Optional[str] = None
-
-    class Config:
-        env_file = ".env"
-        extra = "allow"
 
 settings = Settings()
