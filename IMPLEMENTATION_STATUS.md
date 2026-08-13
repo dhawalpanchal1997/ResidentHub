@@ -50,7 +50,7 @@ This document tracks the implementation progress of ResidentHub (Society Communi
 - **Meeting Extraction**: Fixed regex to detect "approved for Rs" pattern in budget approvals
 - **Test Coverage**: Deterministic meeting extraction test now passes
 
-## Phase 2: AI & Telegram Integration (Weeks 4-5) - PARTIALLY COMPLETE
+## Phase 2: AI & Telegram Integration (Weeks 4-5) - MOSTLY COMPLETE
 
 ### ✅ Completed
 1. **Deterministic Meeting AI Engine (FR-5.1 to FR-5.3)**
@@ -72,15 +72,14 @@ This document tracks the implementation progress of ResidentHub (Society Communi
    - Deterministic keyword fallback when LLM unavailable
    - Source citation with meeting titles/dates
 
-### ⏳ In Progress / Needs Work
-1. **Telegram Bot (FR-6.1, FR-6.3)**
-   - Not yet implemented
-   - Need: `python-telegram-bot` integration
-   - Features: Announcements broadcast, `/contacts` command, Natural Language Q&A
-
-2. **LangGraph Pipeline**
-   - Currently using simple LangChain chain
-   - Should upgrade to proper LangGraph workflow for deterministic extraction
+4. **Telegram Bot (FR-6.1, FR-6.3) - NEWLY IMPLEMENTED**
+   - `python-telegram-bot` integration (v21+)
+   - Webhook endpoint at `/api/v1/telegram/webhook`
+   - Command handlers: `/start`, `/contacts <service>`, `/ask <question>`, `/help`
+   - Vendor directory search by category with ratings
+   - AI Q&A integration with existing RAG service
+   - Broadcast functions for event announcements & meeting summaries
+   - Message handler for natural language questions
 
 ## Phase 3: Advanced Capabilities (Post-Launch) - NOT STARTED
 
@@ -146,13 +145,16 @@ This document tracks the implementation progress of ResidentHub (Society Communi
 - `PATCH /api/v1/meetings/{id}/publish` - Publish meeting (admin)
 - `POST /api/v1/meetings/ask-ai` - Conversational Q&A
 
+### Telegram Bot
+- `POST /api/v1/telegram/webhook` - Telegram webhook endpoint
+- `GET /api/v1/telegram/webhook` - Webhook info
+
 ## Known Issues / TODOs
 
 ### High Priority
-1. **Telegram Bot Implementation** - Core Phase 2 requirement
-2. **Frontend-Backend Integration** - Frontend currently uses local demo data; needs API integration
-3. **File Upload** - Receipt/image upload to Supabase/Cloudflare R2 via presigned URLs
-4. **Society Context** - All queries need `society_id` filtering for multi-tenancy readiness
+1. **Frontend-Backend Integration** - Frontend currently uses local demo data; needs API integration
+2. **File Upload** - Receipt/image upload to Supabase/Cloudflare R2 via presigned URLs
+3. **Society Context** - All queries need `society_id` filtering for multi-tenancy readiness
 
 ### Medium Priority
 1. **Rate Limiting** - Add slowapi for API protection
@@ -162,10 +164,11 @@ This document tracks the implementation progress of ResidentHub (Society Communi
 5. **Tests** - More integration tests for API endpoints
 
 ### Low Priority
-1. **WebSocket** - Real-time updates for RSVP verification
-2. **Caching** - Redis for frequently accessed data
-3. **Monitoring** - Health checks, metrics endpoints
-4. **Documentation** - OpenAPI/Swagger enhancements
+1. **Telegram Bot Configuration** - Set TELEGRAM_BOT_TOKEN and configure webhook for production
+2. **WebSocket** - Real-time updates for RSVP verification
+3. **Caching** - Redis for frequently accessed data
+4. **Monitoring** - Health checks, metrics endpoints
+5. **Documentation** - OpenAPI/Swagger enhancements
 
 ## Running the Application
 

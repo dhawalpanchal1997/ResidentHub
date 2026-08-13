@@ -6,6 +6,7 @@ from app.core.database import init_db, AsyncSessionLocal
 from app.api.v1.api_router import api_router
 from app.models.user import User
 from app.core.security import get_password_hash
+from app.services.telegram_bot import telegram_bot
 from sqlalchemy.future import select
 
 @asynccontextmanager
@@ -35,8 +36,20 @@ async def lifespan(app: FastAPI):
             )
             session.add_all([demo_admin, demo_member])
             await session.commit()
-            
+    
+    # Initialize Telegram bot
+    await telegram_bot.initialize()
+    
+    # Set webhook if token is configured
+    if settings.TELEGRAM_BOT_TOKEN and settings.ENVIRONMENT == "production":
+        # In production, you'd set the actual webhook URL
+        # For now, we'll skip this as it requires a public URL
+        pass
+    
     yield
+    
+    # Cleanup on shutdown
+    await telegram_bot.stop_webhook()
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
