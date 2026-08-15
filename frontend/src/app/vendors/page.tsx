@@ -188,33 +188,62 @@ export default function VendorsPage() {
         </div>
       )}
 
-      {/* Category Pills & Search Bar */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-6">
-        {/* Category Pills */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0">
-          {VENDOR_CATEGORIES.map((cat) => (
-            <button
-              key={cat}
-              onClick={() => setCategoryFilter(cat)}
-              className={`tab-pill whitespace-nowrap ${
-                categoryFilter === cat ? "tab-pill-active" : "tab-pill-inactive"
-              }`}
-            >
-              {cat}
-            </button>
-          ))}
+      {/* Category Filter Chips & Search Bar (Wrapped & Responsive, No Horizontal Scroll) */}
+      <div className="card p-4 mb-6 bg-white dark:bg-[#181411] border-stone-200 dark:border-[#383028] shadow-xs space-y-3.5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-mono font-extrabold text-stone-700 dark:text-stone-300 uppercase tracking-wider">
+              Filter by Service Category
+            </span>
+            <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-400 font-bold">
+              {vendors.length} Listed
+            </span>
+          </div>
+
+          {/* Search Input */}
+          <div className="relative w-full sm:w-72">
+            <Search className="w-4 h-4 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search vendor name, skill, notes..."
+              className="form-input form-input-search text-xs py-2 w-full pr-8"
+            />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery("")}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600 p-0.5"
+                title="Clear Search"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
         </div>
 
-        {/* Search Input */}
-        <div className="relative min-w-[240px]">
-          <Search className="w-4 h-4 text-stone-400 dark:text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search vendor name, skill..."
-            className="form-input form-input-search text-xs py-2"
-          />
+        {/* Wrapped Category Pills */}
+        <div className="flex flex-wrap items-center gap-1.5 pt-1 border-t border-stone-100 dark:border-[#2e2620]">
+          {VENDOR_CATEGORIES.map((cat) => {
+            const Icon = CATEGORY_ICONS[cat];
+            const isActive = categoryFilter === cat;
+
+            return (
+              <button
+                key={cat}
+                onClick={() => setCategoryFilter(cat)}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                  isActive
+                    ? "bg-amber-500 text-stone-950 shadow-xs ring-2 ring-amber-500/20"
+                    : "bg-stone-50 hover:bg-amber-50/60 dark:bg-[#221c17] dark:hover:bg-[#2c231d] text-stone-700 dark:text-stone-300 border border-stone-200/80 dark:border-[#383028]"
+                }`}
+              >
+                {Icon && <Icon className={`w-3.5 h-3.5 ${isActive ? "text-stone-950" : "text-amber-600 dark:text-amber-400"}`} />}
+                <span>{cat}</span>
+              </button>
+            );
+          })}
         </div>
       </div>
 
