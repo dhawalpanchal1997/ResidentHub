@@ -14,6 +14,7 @@ import {
   TrendingDown, TrendingUp, Wallet, Trash2, Tag, Minus, User, Baby,
   HeartHandshake, Edit3, Search, Filter, Sparkles, QrCode, Lock, Check,
 } from "lucide-react";
+import AnimatedCounter from "@/components/AnimatedCounter";
 
 const EXPENSE_CATEGORIES = [
   "Catering & Food",
@@ -583,7 +584,10 @@ export default function EventsPage() {
                           <span className="text-[11px] text-slate-400 font-semibold block font-mono">HEADCOUNT</span>
                           <span className="text-sm font-bold text-slate-800 flex items-center gap-1 mt-0.5">
                             <Users className="w-3.5 h-3.5 text-slate-500" />
-                            {approvedRsvps.reduce((sum, r) => sum + (r.attendees_count || 1), 0)} Confirmed
+                            <AnimatedCounter
+                              value={approvedRsvps.reduce((sum, r) => sum + (r.attendees_count || 1), 0)}
+                              suffix=" Confirmed"
+                            />
                             <span className="text-[10px] font-normal text-slate-400">({ev.rsvps_count} RSVPs)</span>
                           </span>
                           {approvedRsvps.length > 0 && (
@@ -596,7 +600,10 @@ export default function EventsPage() {
                           <span className="text-[11px] text-slate-400 font-semibold block font-mono">COLLECTIONS</span>
                           <span className="text-sm font-extrabold text-emerald-700 flex items-center gap-1 mt-0.5 font-mono">
                             <TrendingUp className="w-3.5 h-3.5 text-emerald-600" />
-                            {formatINR(totalCol)}
+                            <AnimatedCounter
+                              value={totalCol}
+                              formatter={formatINR}
+                            />
                           </span>
                           {pendingCol > 0 && (
                             <span className="text-[10px] text-amber-600 block mt-0.5 font-medium">
@@ -608,7 +615,10 @@ export default function EventsPage() {
                           <span className="text-[11px] text-slate-400 font-semibold block font-mono">EXPENSES</span>
                           <span className="text-sm font-extrabold text-rose-600 flex items-center gap-1 mt-0.5 font-mono">
                             <TrendingDown className="w-3.5 h-3.5 text-rose-500" />
-                            {formatINR(totalExp)}
+                            <AnimatedCounter
+                              value={totalExp}
+                              formatter={formatINR}
+                            />
                           </span>
                           <span className="text-[10px] text-slate-400 block mt-0.5">
                             {expenses.length} vendor bill{expenses.length !== 1 ? "s" : ""}

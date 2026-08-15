@@ -14,6 +14,7 @@ import {
   FileText, CheckCircle, AlertCircle, RefreshCw, Check, ArrowRight,
   ShieldCheck, HelpCircle, Search, Tag, FileSpreadsheet, Eye,
 } from "lucide-react";
+import AnimatedCounter from "@/components/AnimatedCounter";
 
 const CATEGORIES = [
   "Maintenance",
@@ -269,7 +270,7 @@ export default function LedgerPage() {
 
       {/* 3 Overview Financial Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-        <div className="stat-card-balance p-6 rounded-2xl flex flex-col justify-between">
+        <div className="stat-card-balance p-6 rounded-2xl flex flex-col justify-between card-entrance stagger-1">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-slate-300 font-mono">CURRENT BALANCE</span>
             <div className="w-8 h-8 rounded-xl bg-white/10 flex items-center justify-center">
@@ -278,7 +279,10 @@ export default function LedgerPage() {
           </div>
           <div className="mt-4">
             <p className="text-3xl font-extrabold tracking-tight font-mono">
-              {formatINR(summary?.current_balance || 0)}
+              <AnimatedCounter
+                value={summary?.current_balance || 0}
+                formatter={formatINR}
+              />
             </p>
             <p className="text-xs text-emerald-400 font-medium mt-1 flex items-center gap-1">
               <ShieldCheck className="w-3.5 h-3.5" /> Verified Society Reserve
@@ -286,7 +290,7 @@ export default function LedgerPage() {
           </div>
         </div>
 
-        <div className="stat-card-income p-6 rounded-2xl flex flex-col justify-between">
+        <div className="stat-card-income p-6 rounded-2xl flex flex-col justify-between card-entrance stagger-2">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-emerald-800 font-mono">TOTAL INFLOW (CREDITS)</span>
             <div className="w-8 h-8 rounded-xl bg-emerald-100 flex items-center justify-center">
@@ -295,7 +299,10 @@ export default function LedgerPage() {
           </div>
           <div className="mt-4">
             <p className="text-3xl font-extrabold text-emerald-950 font-mono">
-              +{formatINR(summary?.total_income || 0)}
+              <AnimatedCounter
+                value={summary?.total_income || 0}
+                formatter={(val) => `+${formatINR(val)}`}
+              />
             </p>
             <p className="text-xs text-emerald-700 font-medium mt-1">
               Maintenance dues & Event RSVPs
@@ -303,7 +310,7 @@ export default function LedgerPage() {
           </div>
         </div>
 
-        <div className="stat-card-expense p-6 rounded-2xl flex flex-col justify-between">
+        <div className="stat-card-expense p-6 rounded-2xl flex flex-col justify-between card-entrance stagger-3">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-rose-800 font-mono">TOTAL OUTFLOW (DEBITS)</span>
             <div className="w-8 h-8 rounded-xl bg-rose-100 flex items-center justify-center">
@@ -312,7 +319,10 @@ export default function LedgerPage() {
           </div>
           <div className="mt-4">
             <p className="text-3xl font-extrabold text-rose-950 font-mono">
-              -{formatINR(summary?.total_expense || 0)}
+              <AnimatedCounter
+                value={summary?.total_expense || 0}
+                formatter={(val) => `-${formatINR(val)}`}
+              />
             </p>
             <p className="text-xs text-rose-700 font-medium mt-1">
               Utilities, Security & Vendor Invoices
