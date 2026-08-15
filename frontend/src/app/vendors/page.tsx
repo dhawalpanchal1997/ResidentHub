@@ -15,6 +15,8 @@ import {
 
 const VENDOR_CATEGORIES = [
   "All",
+  "Security / Guards",
+  "Maid / Housekeeping",
   "Electrician",
   "Plumber",
   "Doctor / Emergency",
@@ -26,6 +28,10 @@ const VENDOR_CATEGORIES = [
 ];
 
 const CATEGORY_ICONS: Record<string, any> = {
+  "Security / Guards": ShieldCheck,
+  Security: ShieldCheck,
+  "Maid / Housekeeping": Sparkles,
+  Maid: Sparkles,
   Electrician: Zap,
   Plumber: Wrench,
   "Doctor / Emergency": HeartPulse,
