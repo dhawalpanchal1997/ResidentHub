@@ -15,10 +15,10 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7  # 7 days
     
-    # Database: Supports Postgres or SQLite fallback for local zero-config
-    DATABASE_URL: str = "sqlite+aiosqlite:///./residenthub.db"
+    # Database: PostgreSQL + pgvector
+    DATABASE_URL: str = "postgresql+asyncpg://residenthub:residenthub@localhost:5432/residenthub"
     
-    # AI Engine Settings
+    # AI Engine Settings (Module 5 — V2)
     LLM_PROVIDER: Literal["ollama", "groq", "mock"] = "ollama"
     
     # Ollama settings (Local Dev)

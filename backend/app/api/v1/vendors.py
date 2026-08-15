@@ -5,7 +5,7 @@ from sqlalchemy.future import select
 from sqlalchemy.orm import selectinload
 
 from app.core.database import get_db
-from app.core.security import get_current_user
+from app.core.security import get_current_user, get_current_admin
 from app.models.user import User
 from app.models.vendor import ServiceProvider, ProviderReview
 from app.schemas.vendor import VendorCreate, VendorResponse, ReviewCreate, ReviewResponse
@@ -83,6 +83,21 @@ async def create_vendor(
         total_reviews=0,
         reviews=[]
     )
+
+@router.delete("/{provider_id}")
+async def delete_vendor(
+    provider_id: str,
+    current_user: User = Depends(get_current_admin),
+    db: AsyncSession = Depends(get_db)
+):
+    result = await db.execute(select(ServiceProvider).where(ServiceProvider.id == provider_id))
+    provider = result.scalars().first()
+    if not provider:
+        raise HTTPException(status_code=404, detail="Service provider not found")
+    
+    await db.delete(provider)
+    await db.commit()
+    return {"detail": "Vendor deleted successfully"}
 
 @router.post("/{provider_id}/reviews", response_model=ReviewResponse)
 async def add_vendor_review(

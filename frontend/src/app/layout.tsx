@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { AuthProvider } from "@/lib/auth-context";
 
 export const metadata: Metadata = {
-  title: "Runwal Gardens Tower 24 | ResidentHub Society Portal",
-  description: "Official community portal for Tower 24, Runwal Gardens Dombivli. Event RSVPs, transparent maintenance ledger, verified local vendors, and AI meeting records.",
+  title: "ResidentHub — Society Management Portal",
+  description: "Community management platform for Tower 24, Runwal Gardens Dombivli. Event RSVPs, transparent financial ledger, verified local vendors directory.",
 };
 
 export default function RootLayout({
@@ -13,8 +14,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className="bg-slate-50 text-slate-900 antialiased selection:bg-brand-500 selection:text-white">
-        {children}
+      <body>
+        <AuthProvider>
+          {children}
+        </AuthProvider>
       </body>
     </html>
   );
