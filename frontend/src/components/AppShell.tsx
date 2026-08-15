@@ -34,6 +34,7 @@ import {
 } from "lucide-react";
 import FestiveBackgroundPattern from "@/components/FestiveBackgroundPattern";
 import IssueIntakeBotDrawer from "@/components/IssueIntakeBotDrawer";
+import WelcomeGuestLanding from "@/components/WelcomeGuestLanding";
 
 const NAV_ITEMS = [
   { href: "/", label: "Dashboard", icon: Home, badge: null },
@@ -515,9 +516,19 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           </div>
         </header>
 
-        {/* Page Content */}
+        {/* Page Content: Guarded with Welcome Guest Portal when not logged in */}
         <main className="flex-1 p-4 sm:p-8 max-w-7xl w-full mx-auto">
-          {children}
+          {user ? (
+            children
+          ) : (
+            <WelcomeGuestLanding
+              onOpenAuth={(mode) => {
+                setAuthMode(mode);
+                setShowAuth(true);
+              }}
+              onQuickLogin={handleQuickLogin}
+            />
+          )}
         </main>
       </div>
 
