@@ -77,3 +77,23 @@ class IssueAnalyticsOverview(BaseModel):
     category_distribution: List[IssueCategoryStat]
     priority_breakdown: List[dict]
     recent_resolved: int
+
+class IssueDuplicateCheckRequest(BaseModel):
+    title: str
+    description: str
+    category: str = "General"
+    location: str = "Flat Interior"
+    flat_number: Optional[str] = None
+
+class IssueDuplicateCheckResponse(BaseModel):
+    is_duplicate: bool
+    confidence: str = "none"  # "high" | "medium" | "low" | "none"
+    matched_issue_id: Optional[str] = None
+    matched_ticket_number: Optional[str] = None
+    matched_title: Optional[str] = None
+    matched_status: Optional[str] = None
+    matched_location: Optional[str] = None
+    matched_category: Optional[str] = None
+    is_common_facility: bool = False
+    reasoning: str
+    clarification_question: str

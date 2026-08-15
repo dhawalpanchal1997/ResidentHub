@@ -76,3 +76,57 @@ def test_notice_and_committee_schemas():
         display_order=1
     )
     assert member.role == "Chairman"
+
+def test_duplicate_issue_verification():
+    from app.services.issue_dedup import deterministic_duplicate_check, is_common_facility
+
+    assert is_common_facility("Passenger Lift A", "Lift making sound", "Door jammed") == True
+    assert is_common_facility("Flat B-201 Interior", "Geyser switch broken", "Bathroom socket") == False
+
+    active_issues = [
+        {
+            "id": "test-lift-1",
+            "ticket_number": "TKT-24-001",
+            "title": "Passenger Lift A door sensor jammed on 4th floor",
+            "description": "Schindler lift door is stuck open on the fourth floor and making clicking noise.",
+            "category": "Elevator",
+            "location": "Passenger Lift A (4th Floor)",
+            "flat_number": "B-201",
+            "status": "open"
+        },
+        {
+            "id": "test-flat-2",
+            "ticket_number": "TKT-24-002",
+            "title": "Kitchen sink leakage",
+            "description": "Water leaking from pipe under the sink in kitchen.",
+            "category": "Plumbing",
+            "location": "Flat A-402 Kitchen",
+            "flat_number": "A-402",
+            "status": "open"
+        }
+    ]
+
+    # Case 1: Same common facility breakdown reported by another resident
+    res1 = deterministic_duplicate_check(
+        new_title="Lift door not closing properly",
+        new_description="Passenger lift A is stuck with door open on 4th floor",
+        new_category="Elevator",
+        new_location="Passenger Lift A",
+        new_flat="C-702",
+        active_issues=active_issues
+    )
+    assert res1["is_duplicate"] == True
+    assert res1["matched_ticket_number"] == "TKT-24-001"
+    assert res1["is_common_facility"] == True
+    assert "clarification_question" in res1
+
+    # Case 2: Separate private flat with plumbing issue should NOT be duplicate of Flat A-402
+    res2 = deterministic_duplicate_check(
+        new_title="Kitchen sink leakage",
+        new_description="Water leaking from pipe under kitchen sink",
+        new_category="Plumbing",
+        new_location="Flat B-501 Kitchen",
+        new_flat="B-501",
+        active_issues=active_issues
+    )
+    assert res2["is_duplicate"] == False

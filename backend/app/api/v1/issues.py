@@ -18,7 +18,10 @@ from app.schemas.issue import (
     IssueActivityResponse,
     IssueAnalyticsOverview,
     IssueCategoryStat,
+    IssueDuplicateCheckRequest,
+    IssueDuplicateCheckResponse,
 )
+from app.services.issue_dedup import verify_issue_duplicate_with_llm
 
 router = APIRouter(prefix="/issues", tags=["Society Issues & Helpdesk"])
 
@@ -218,6 +221,47 @@ async def get_issues(
         ]
 
     return [IssueResponse.model_validate(i) for i in issues]
+
+@router.post("/verify-duplicate", response_model=IssueDuplicateCheckResponse)
+async def verify_duplicate_issue(
+    payload: IssueDuplicateCheckRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    await _ensure_seed_issues(db)
+    
+    # Query active open or in_progress tickets in society
+    result = await db.execute(
+        select(Issue)
+        .where(Issue.status.in_(["open", "in_progress"]))
+        .options(selectinload(Issue.activities))
+    )
+    active_issues = result.scalars().all()
+    
+    active_dicts = [
+        {
+            "id": i.id,
+            "ticket_number": i.ticket_number,
+            "title": i.title,
+            "description": i.description,
+            "category": i.category,
+            "location": i.location,
+            "flat_number": i.flat_number,
+            "status": i.status
+        }
+        for i in active_issues
+    ]
+    
+    res = await verify_issue_duplicate_with_llm(
+        title=payload.title,
+        description=payload.description,
+        category=payload.category,
+        location=payload.location,
+        flat_number=payload.flat_number or current_user.flat_number,
+        active_issues=active_dicts
+    )
+    
+    return IssueDuplicateCheckResponse(**res)
 
 @router.get("/analytics/overview", response_model=IssueAnalyticsOverview)
 async def get_issue_analytics(db: AsyncSession = Depends(get_db)):

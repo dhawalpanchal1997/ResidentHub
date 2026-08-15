@@ -966,3 +966,41 @@ export async function fetchIssueAnalytics(): Promise<IssueAnalyticsData> {
   }
   return res.json();
 }
+
+export interface IssueDuplicateVerificationResult {
+  is_duplicate: boolean;
+  confidence: "high" | "medium" | "low" | "none";
+  matched_issue_id?: string | null;
+  matched_ticket_number?: string | null;
+  matched_title?: string | null;
+  matched_status?: string | null;
+  matched_location?: string | null;
+  matched_category?: string | null;
+  is_common_facility: boolean;
+  reasoning: string;
+  clarification_question: string;
+}
+
+export async function verifyIssueDuplicate(payload: {
+  title: string;
+  description: string;
+  category: string;
+  location?: string;
+  flat_number?: string;
+}): Promise<IssueDuplicateVerificationResult> {
+  const res = await fetch(`${API_BASE_URL}/issues/verify-duplicate`, {
+    method: "POST",
+    headers: authHeaders(),
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    return {
+      is_duplicate: false,
+      confidence: "none",
+      is_common_facility: false,
+      reasoning: "Duplicate check skipped",
+      clarification_question: "",
+    };
+  }
+  return res.json();
+}
