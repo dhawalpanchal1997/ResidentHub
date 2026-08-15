@@ -630,3 +630,57 @@ export async function fetchAnalyticsOverview(): Promise<AnalyticsOverviewData> {
   }
   return res.json();
 }
+
+// ── Notice Board API ───────────────────────────────────────────
+
+export interface NoticeItem {
+  id: string;
+  society_id?: string | null;
+  title: string;
+  content: string;
+  category: "General" | "Maintenance" | "Security" | "Festival" | "Emergency" | "Financial" | string;
+  priority: "normal" | "high" | "urgent" | string;
+  author_name: string;
+  created_by?: string | null;
+  created_at: string;
+}
+
+export async function fetchNotices(): Promise<NoticeItem[]> {
+  const res = await fetch(`${API_BASE_URL}/notices/`, {
+    headers: authHeaders(),
+    cache: "no-store",
+  });
+  if (!res.ok) {
+    throw new Error("Failed to fetch society notices");
+  }
+  return res.json();
+}
+
+export async function createNotice(payload: {
+  title: string;
+  content: string;
+  category?: string;
+  priority?: string;
+  author_name?: string;
+}): Promise<NoticeItem> {
+  const res = await fetch(`${API_BASE_URL}/notices/`, {
+    method: "POST",
+    headers: authHeaders(),
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to post society notice");
+  }
+  return res.json();
+}
+
+export async function deleteNotice(noticeId: string): Promise<void> {
+  const res = await fetch(`${API_BASE_URL}/notices/${noticeId}`, {
+    method: "DELETE",
+    headers: authHeaders(),
+  });
+  if (!res.ok) {
+    throw new Error("Failed to delete notice");
+  }
+}
