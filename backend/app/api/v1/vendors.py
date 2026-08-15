@@ -12,6 +12,8 @@ from app.schemas.vendor import VendorCreate, VendorResponse, ReviewCreate, Revie
 
 router = APIRouter(prefix="/vendors", tags=["Vendor & Worker Directory"])
 
+from sqlalchemy import or_
+
 @router.get("/", response_model=List[VendorResponse])
 async def list_vendors(
     category: Optional[str] = Query(None, description="Filter by category"),
@@ -19,8 +21,11 @@ async def list_vendors(
     db: AsyncSession = Depends(get_db)
 ):
     query = select(ServiceProvider).options(selectinload(ServiceProvider.reviews))
-    if category:
-        query = query.where(ServiceProvider.category.ilike(f"%{category}%"))
+    if category and category.strip() and category.lower() != "all":
+        # Support compound filter terms like "Security / Guards" matching "Security"
+        terms = [t.strip() for t in category.split("/") if t.strip()]
+        conds = [ServiceProvider.category.ilike(f"%{t}%") for t in terms]
+        query = query.where(or_(*conds))
     
     result = await db.execute(query)
     providers = result.scalars().all()
