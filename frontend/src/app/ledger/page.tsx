@@ -387,7 +387,7 @@ export default function LedgerPage() {
                 </div>
               </div>
               <p className="text-2xl font-black text-emerald-950 mt-2 font-mono">
-                <AnimatedCounter value={summary.total_income} formatAsCurrency />
+                <AnimatedCounter value={summary.total_income} formatter={(v) => formatINR(v)} />
               </p>
               <p className="text-[11px] text-emerald-600 mt-1 font-medium">Maintenance & Event Contributions</p>
             </div>
@@ -400,7 +400,7 @@ export default function LedgerPage() {
                 </div>
               </div>
               <p className="text-2xl font-black text-rose-950 mt-2 font-mono">
-                <AnimatedCounter value={summary.total_expense} formatAsCurrency />
+                <AnimatedCounter value={summary.total_expense} formatter={(v) => formatINR(v)} />
               </p>
               <p className="text-[11px] text-rose-600 mt-1 font-medium">Utilities, AMC, Vendor & Event Costs</p>
             </div>
@@ -413,7 +413,7 @@ export default function LedgerPage() {
                 </div>
               </div>
               <p className="text-2xl font-black text-slate-900 mt-2 font-mono">
-                <AnimatedCounter value={summary.current_balance} formatAsCurrency />
+                <AnimatedCounter value={summary.current_balance} formatter={(v) => formatINR(v)} />
               </p>
               <p className="text-[11px] text-amber-700 mt-1 font-medium">Net Liquid Society Reserve Fund</p>
             </div>
