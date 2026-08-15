@@ -115,20 +115,20 @@ export default function AnalyticsPage() {
 
       {/* Top 4 KPI High-Impact Overview Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        {/* KPI 1: Society Reserve */}
-        <div className="card p-5 relative overflow-hidden bg-gradient-to-br from-stone-900 via-stone-900 to-amber-950 text-white border-stone-800 shadow-xl">
+        {/* KPI 1: Society Reserve (High-Contrast Obsidian Stat Card) */}
+        <div className="stat-card-balance p-5 rounded-3xl relative overflow-hidden text-white shadow-xl">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-mono font-bold tracking-wider text-amber-300/80 uppercase">
+            <span className="text-[11px] font-mono font-bold tracking-wider text-amber-300 uppercase">
               Society Reserve Fund
             </span>
             <div className="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-300 flex items-center justify-center">
               <DollarSign className="w-4 h-4" />
             </div>
           </div>
-          <div className="text-2xl sm:text-3xl font-extrabold font-mono mt-2 tracking-tight">
+          <div className="text-2xl sm:text-3xl font-extrabold font-mono mt-2 tracking-tight text-white">
             {loading ? "..." : formatINR(data?.financials.reserve_fund || 0)}
           </div>
-          <div className="flex items-center gap-1.5 mt-2 text-xs text-amber-200/90 font-medium">
+          <div className="flex items-center gap-1.5 mt-2 text-xs text-amber-200 font-medium">
             <ArrowUpRight className="w-3.5 h-3.5 text-emerald-400" />
             <span>{data?.financials.savings_rate || 0}% Savings Retention</span>
           </div>
