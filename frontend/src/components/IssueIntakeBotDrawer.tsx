@@ -299,7 +299,27 @@ export default function IssueIntakeBotDrawer({
       return;
     }
 
-    if (step === 3) {
+    if (step === 0) {
+      setCategory(text);
+      addUserMessage(text);
+      setStep(1);
+      addBotMessage(`Understood, **${text}**. Where is this issue located in Tower 24?`, LOCATIONS);
+      return;
+    } else if (step === 1) {
+      setLocation(text);
+      addUserMessage(text);
+      setStep(2);
+      addBotMessage(`Got it, at **${text}**. What is the urgency / priority level of this issue?`, PRIORITIES);
+      return;
+    } else if (step === 2) {
+      const lower = text.toLowerCase();
+      const pri = lower.includes("emerg") ? "emergency" : lower.includes("urg") || lower.includes("high") ? "high" : lower.includes("low") ? "low" : "medium";
+      setPriority(pri);
+      addUserMessage(text);
+      setStep(3);
+      addBotMessage(`Priority noted as **${pri.toUpperCase()}**. Please describe the issue in detail (e.g. *Passenger Lift A door stuck on 4th floor*). Type your message below:`);
+      return;
+    } else if (step === 3) {
       addUserMessage(text);
       await runAiDuplicateVerification(text);
     } else if (step === 4) {
