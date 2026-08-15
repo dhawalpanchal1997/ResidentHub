@@ -1,15 +1,25 @@
 from datetime import timedelta
+from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
 from app.core.database import get_db
-from app.core.security import verify_password, get_password_hash, create_access_token, get_current_user
+from app.core.security import verify_password, get_password_hash, create_access_token, get_current_user, get_current_admin
 from app.models.user import User
 from app.schemas.auth import UserCreate, UserLogin, UserResponse, TokenResponse
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
+
+@router.get("/users", response_model=List[UserResponse])
+async def list_users(
+    current_admin: User = Depends(get_current_admin),
+    db: AsyncSession = Depends(get_db)
+):
+    result = await db.execute(select(User).order_by(User.created_at.desc()))
+    users = result.scalars().all()
+    return [UserResponse.model_validate(u) for u in users]
 
 @router.post("/register", response_model=TokenResponse)
 async def register_user(user_in: UserCreate, db: AsyncSession = Depends(get_db)):

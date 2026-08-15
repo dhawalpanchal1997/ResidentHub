@@ -9,6 +9,7 @@ class CommitteeMember(Base):
 
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     society_id = Column(String(36), ForeignKey("societies.id"), nullable=True)
+    user_id = Column(String(36), ForeignKey("users.id"), nullable=True)
     name = Column(String(255), nullable=False)
     role = Column(String(255), nullable=False)  # e.g. "Chairman & Governance", "Hon. Secretary", "Hon. Treasurer"
     flat_number = Column(String(50), nullable=False)  # e.g. "B-201"
@@ -20,3 +21,4 @@ class CommitteeMember(Base):
 
     # Relationships
     society = relationship("Society", backref="committee_members")
+    user = relationship("User", backref="committee_role")

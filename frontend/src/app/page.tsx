@@ -15,13 +15,17 @@ import {
   updateCommitteeMember,
   deleteCommitteeMember,
   applaudCommitteeMember,
+  assignUserToCommitteeMember,
+  unlinkUserFromCommitteeMember,
   fetchIssues,
+  fetchUsers,
   EventItem,
   LedgerSummaryData,
   VendorItem,
   NoticeItem,
   CommitteeMemberItem,
   IssueItem,
+  User,
 } from "@/lib/api";
 import {
   Calendar,
@@ -67,6 +71,10 @@ import {
   Edit2,
   Camera,
   Image as ImageIcon,
+  Link as LinkIcon,
+  UserPlus,
+  UserCheck,
+  UserX,
 } from "lucide-react";
 import Link from "next/link";
 import HousingHeroVisual from "@/components/HousingHeroVisual";
@@ -133,6 +141,15 @@ export default function DashboardPage() {
   const [memberFormOrder, setMemberFormOrder] = useState(0);
   const [submittingMember, setSubmittingMember] = useState(false);
   const [memberError, setMemberError] = useState("");
+
+  // Link Committee Member to User Modal state (Admin)
+  const [showLinkUserModal, setShowLinkUserModal] = useState(false);
+  const [linkingMember, setLinkingMember] = useState<CommitteeMemberItem | null>(null);
+  const [availableUsers, setAvailableUsers] = useState<User[]>([]);
+  const [selectedUserId, setSelectedUserId] = useState("");
+  const [searchUserQuery, setSearchUserQuery] = useState("");
+  const [linkingUser, setLinkingUser] = useState(false);
+  const [linkUserError, setLinkUserError] = useState("");
 
   // Ticket QR Pass Modal state
   const [ticketModalData, setTicketModalData] = useState<{
@@ -361,6 +378,94 @@ export default function DashboardPage() {
       setSubmittingMember(false);
     }
   };
+
+  // ── Link/Unlink User to Committee Member Handlers ───────────────────
+  const handleOpenLinkUserModal = async (member: CommitteeMemberItem) => {
+    if (!isAdmin) {
+      await login("admin@residenthub.com", "admin123").catch(() => {});
+    }
+    setLinkingMember(member);
+    setSelectedUserId("");
+    setSearchUserQuery("");
+    setLinkUserError("");
+    
+    // Fetch all registered users
+    try {
+      const users = await fetchUsers();
+      setAvailableUsers(users);
+    } catch {
+      setAvailableUsers([]);
+    }
+    
+    setShowLinkUserModal(true);
+  };
+
+  const handleCloseLinkUserModal = () => {
+    setShowLinkUserModal(false);
+    setLinkingMember(null);
+    setSelectedUserId("");
+    setSearchUserQuery("");
+    setLinkUserError("");
+  };
+
+  const handleLinkUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!linkingMember || !selectedUserId) {
+      setLinkUserError("Please select a user to link");
+      return;
+    }
+
+    setLinkingUser(true);
+    setLinkUserError("");
+    try {
+      if (!isAdmin) {
+        await login("admin@residenthub.com", "admin123").catch(() => {});
+      }
+
+      const updated = await assignUserToCommitteeMember(linkingMember.id, selectedUserId);
+      
+      // Update the committee member in state
+      setCommittee((prev) => prev.map((m) => (m.id === updated.id ? updated : m)));
+      
+      showToast("User linked successfully! Admin access granted.", "success");
+      handleCloseLinkUserModal();
+    } catch (err: any) {
+      setLinkUserError(err.message || "Failed to link user");
+    } finally {
+      setLinkingUser(false);
+    }
+  };
+
+  const handleUnlinkUser = async (member: CommitteeMemberItem) => {
+    if (!member.user_id) return;
+    
+    const confirmed = window.confirm(
+      `Unlink ${member.linked_user_name || "user"} from "${member.name}"? This will revoke their admin access.`
+    );
+    if (!confirmed) return;
+
+    try {
+      if (!isAdmin) {
+        await login("admin@residenthub.com", "admin123").catch(() => {});
+      }
+
+      const updated = await unlinkUserFromCommitteeMember(member.id, true);
+      
+      // Update the committee member in state
+      setCommittee((prev) => prev.map((m) => (m.id === updated.id ? updated : m)));
+      
+      showToast("User unlinked. Admin access revoked.", "info");
+    } catch (err: any) {
+      showToast(err.message || "Failed to unlink user", "error");
+    }
+  };
+
+  const filteredUsers = availableUsers.filter(
+    (u) =>
+      u.full_name.toLowerCase().includes(searchUserQuery.toLowerCase()) ||
+      u.email.toLowerCase().includes(searchUserQuery.toLowerCase()) ||
+      u.flat_number.toLowerCase().includes(searchUserQuery.toLowerCase())
+  );
 
   const [deleteConfirm, setDeleteConfirm] = useState<{
     type: "notice" | "committee";
@@ -883,15 +988,17 @@ export default function DashboardPage() {
                     ))}
                   </div>
 
-                  {/* + Post Notice Button (Admin Action) */}
-                  <button
-                    onClick={handleOpenNoticeModal}
-                    className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-stone-950 text-xs font-extrabold flex items-center gap-1.5 transition-all shadow-md"
-                    title="Post New Society Notice"
-                  >
-                    <Plus className="w-3.5 h-3.5 stroke-[3]" />
-                    <span>+ Post Notice</span>
-                  </button>
+{/* + Post Notice Button (Admin Action) */}
+                    {isAdmin && (
+                      <button
+                        onClick={handleOpenNoticeModal}
+                        className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-stone-950 text-xs font-extrabold flex items-center gap-1.5 transition-all shadow-md"
+                        title="Post New Society Notice"
+                      >
+                        <Plus className="w-3.5 h-3.5 stroke-[3]" />
+                        <span>+ Post Notice</span>
+                      </button>
+                    )}
                 </div>
               </div>
 
@@ -1126,42 +1233,67 @@ export default function DashboardPage() {
                 </div>
 
                 {/* + Add Committee Member Button (Admin) */}
-                <button
-                  onClick={handleOpenAddMemberModal}
-                  className="btn-primary text-xs py-1.5 px-3.5 self-start sm:self-auto flex items-center gap-1.5 shadow-sm font-bold"
-                  title="Add New Committee Member"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  <span>+ Add Committee Member</span>
-                </button>
+                {isAdmin && (
+                  <button
+                    onClick={handleOpenAddMemberModal}
+                    className="btn-primary text-xs py-1.5 px-3.5 self-start sm:self-auto flex items-center gap-1.5 shadow-sm font-bold"
+                    title="Add New Committee Member"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>+ Add Committee Member</span>
+                  </button>
+                )}
               </div>
 
               {/* Committee Members Photo Cards Grid */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 {committee.map((leader) => {
                   const isApplauded = applaudedIds[leader.id];
+                  const isLinked = !!leader.user_id;
 
                   return (
                     <div
                       key={leader.id}
                       className="p-5 rounded-3xl bg-white dark:bg-[#1b1613] border border-stone-200 dark:border-[#383028] hover:border-amber-400 dark:hover:border-amber-600 shadow-xs hover:shadow-lg transition-all flex flex-col items-center text-center justify-between space-y-3.5 relative group overflow-hidden"
                     >
-                      {/* Top Action Buttons for Admin (Edit / Delete) */}
+                      {/* Top Action Buttons for Admin (Edit / Delete / Link/Unlink) */}
                       <div className="absolute top-3 right-3 flex items-center gap-1 z-10">
-                        <button
-                          onClick={() => handleOpenEditMemberModal(leader)}
-                          className="p-1.5 rounded-xl bg-white/90 dark:bg-[#28211b] text-stone-600 dark:text-stone-300 hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-[#342b24] shadow-xs border border-stone-200 dark:border-[#40352b] transition-all opacity-80 group-hover:opacity-100"
-                          title="Edit Committee Member"
-                        >
-                          <Edit2 className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          onClick={() => setDeleteConfirm({ type: "committee", id: leader.id, title: leader.name })}
-                          className="p-1.5 rounded-xl bg-white/90 dark:bg-[#28211b] text-stone-600 dark:text-stone-300 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 shadow-xs border border-stone-200 dark:border-[#40352b] transition-all opacity-80 group-hover:opacity-100"
-                          title="Delete Record"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
+                        {isAdmin && isLinked && (
+                          <button
+                            onClick={() => handleUnlinkUser(leader)}
+                            className="p-1.5 rounded-xl bg-white/90 dark:bg-[#28211b] text-stone-600 dark:text-stone-300 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 shadow-xs border border-stone-200 dark:border-[#40352b] transition-all opacity-80 group-hover:opacity-100"
+                            title="Unlink User & Revoke Admin Access"
+                          >
+                            <UserX className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                        {isAdmin && !isLinked && (
+                          <button
+                            onClick={() => handleOpenLinkUserModal(leader)}
+                            className="p-1.5 rounded-xl bg-white/90 dark:bg-[#28211b] text-stone-600 dark:text-stone-300 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 shadow-xs border border-stone-200 dark:border-[#40352b] transition-all opacity-80 group-hover:opacity-100"
+                            title="Link Resident Account & Grant Admin Access"
+                          >
+                            <UserPlus className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                        {isAdmin && (
+                          <>
+                            <button
+                              onClick={() => handleOpenEditMemberModal(leader)}
+                              className="p-1.5 rounded-xl bg-white/90 dark:bg-[#28211b] text-stone-600 dark:text-stone-300 hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-[#342b24] shadow-xs border border-stone-200 dark:border-[#40352b] transition-all opacity-80 group-hover:opacity-100"
+                              title="Edit Committee Member"
+                            >
+                              <Edit2 className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              onClick={() => setDeleteConfirm({ type: "committee", id: leader.id, title: leader.name })}
+                              className="p-1.5 rounded-xl bg-white/90 dark:bg-[#28211b] text-stone-600 dark:text-stone-300 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 shadow-xs border border-stone-200 dark:border-[#40352b] transition-all opacity-80 group-hover:opacity-100"
+                              title="Delete Record"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </>
+                        )}
                       </div>
 
                       {/* Clean Photo Portrait (No overlapping badge) */}
@@ -1184,6 +1316,16 @@ export default function DashboardPage() {
                         </div>
                       </div>
 
+                      {/* Admin Access Badge - shown when linked */}
+                      {isLinked && (
+                        <div className="w-full flex justify-center">
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/70 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700 text-[10px] font-bold">
+                            <UserCheck className="w-3 h-3" />
+                            <span>Admin Access Granted</span>
+                          </span>
+                        </div>
+                      )}
+
                       {/* Member Info: Flat Pill + Name + Designation + Badge */}
                       <div className="w-full space-y-1 pt-1">
                         <span className="inline-block px-2.5 py-0.5 rounded-full bg-amber-500/15 dark:bg-amber-500/20 text-amber-800 dark:text-amber-300 border border-amber-400/40 dark:border-amber-500/30 text-[10px] font-mono font-extrabold tracking-wide mb-1">
@@ -1199,6 +1341,11 @@ export default function DashboardPage() {
                         <span className="inline-block text-[10px] font-semibold px-2 py-0.5 rounded-md bg-stone-100 dark:bg-[#251e18] text-stone-600 dark:text-stone-400 border border-stone-200 dark:border-[#383028] mt-1">
                           {leader.badge}
                         </span>
+                        {leader.linked_user_name && (
+                          <span className="inline-block text-[10px] font-medium px-2 py-0.5 rounded-md bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800 mt-1">
+                            Linked: {leader.linked_user_name}
+                          </span>
+                        )}
                       </div>
 
                       {/* Interactive Appreciation Button */}
@@ -1520,6 +1667,116 @@ export default function DashboardPage() {
                     : editingMember
                     ? "Update Record"
                     : "Add Member"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* 🔗 LINK COMMITTEE MEMBER TO USER MODAL (ADMIN) */}
+      {showLinkUserModal && linkingMember && (
+        <div className="modal-backdrop" onClick={handleCloseLinkUserModal}>
+          <div
+            className="modal-content max-w-lg p-6 bg-white dark:bg-[#181411] border border-stone-200 dark:border-[#383028] shadow-2xl rounded-3xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-5">
+              <div>
+                <h2 className="text-lg font-extrabold text-stone-900 dark:text-white flex items-center gap-2">
+                  <LinkIcon className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+                  <span>Link Resident Account</span>
+                </h2>
+                <p className="text-xs text-stone-500 dark:text-stone-400 mt-0.5">
+                  Grant admin access to <span className="font-bold text-amber-700 dark:text-amber-400">{linkingMember.name}</span> ({linkingMember.role})
+                </p>
+              </div>
+              <button
+                onClick={handleCloseLinkUserModal}
+                className="p-1.5 rounded-xl text-stone-400 hover:text-stone-900 dark:hover:text-white hover:bg-stone-100 dark:hover:bg-[#251e18] transition-all"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {linkUserError && (
+              <div className="p-3 mb-4 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 text-xs">
+                {linkUserError}
+              </div>
+            )}
+
+            <form onSubmit={handleLinkUser} className="space-y-4">
+              <div>
+                <label className="form-label flex items-center justify-between">
+                  <span>Select Resident User *</span>
+                  <span className="text-[10px] text-amber-600 font-bold">Search by name, email, or flat</span>
+                </label>
+                <input
+                  type="text"
+                  value={searchUserQuery}
+                  onChange={(e) => setSearchUserQuery(e.target.value)}
+                  placeholder="Search residents..."
+                  className="form-input font-mono text-xs mb-2"
+                />
+                <div className="max-h-60 overflow-y-auto space-y-2 border border-stone-200 dark:border-[#383028] rounded-xl p-3 bg-stone-50 dark:bg-[#120f0d]">
+                  {filteredUsers.length === 0 ? (
+                    <p className="text-center text-stone-500 dark:text-stone-400 text-xs py-4">
+                      {searchUserQuery ? "No matching residents found" : "No registered residents available"}
+                    </p>
+                  ) : (
+                    filteredUsers.map((u) => (
+                      <label
+                        key={u.id}
+                        className={`flex items-center gap-3 p-2 rounded-lg border transition-all cursor-pointer ${
+                          selectedUserId === u.id
+                            ? "bg-emerald-50 dark:bg-emerald-950/50 border-emerald-300 dark:border-emerald-700"
+                            : "border-stone-200 dark:border-[#383028] hover:bg-white dark:hover:bg-[#1a1512]"
+                        }`}
+                      >
+                        <input
+                          type="radio"
+                          name="selectedUser"
+                          value={u.id}
+                          checked={selectedUserId === u.id}
+                          onChange={() => setSelectedUserId(u.id)}
+                          className="w-4 h-4 text-emerald-600 border-stone-300 focus:ring-emerald-500"
+                        />
+                        <div className="flex-1 text-left min-w-0">
+                          <p className="font-bold text-stone-900 dark:text-white text-sm truncate">{u.full_name}</p>
+                          <p className="text-[10px] text-stone-500 dark:text-stone-400 flex items-center gap-1 font-mono">
+                            <UserIcon className="w-3 h-3" />
+                            <span>Flat {u.flat_number}</span>
+                            <span>•</span>
+                            <span>{u.email}</span>
+                            <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold ${
+                              u.role === "admin"
+                                ? "bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300"
+                                : "bg-stone-100 dark:bg-[#251e18] text-stone-600 dark:text-stone-400"
+                            }`}>
+                              {u.role}
+                            </span>
+                          </p>
+                        </div>
+                      </label>
+                    ))
+                  )}
+                </div>
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={handleCloseLinkUserModal}
+                  className="btn-secondary flex-1 py-2 text-xs"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={linkingUser || !selectedUserId}
+                  className="btn-primary flex-1 py-2 text-xs shadow-md shadow-emerald-600/10 font-bold"
+                >
+                  {linkingUser ? "Linking..." : "Link & Grant Admin Access"}
                 </button>
               </div>
             </form>

@@ -18,9 +18,15 @@ class CommitteeMemberUpdate(BaseModel):
     badge: Optional[str] = None
     display_order: Optional[int] = None
 
+class AssignCommitteeMemberRequest(BaseModel):
+    user_id: str
+
 class CommitteeMemberResponse(BaseModel):
     id: str
     society_id: Optional[str] = None
+    user_id: Optional[str] = None
+    linked_user_email: Optional[str] = None
+    linked_user_name: Optional[str] = None
     name: str
     role: str
     flat_number: str

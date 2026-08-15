@@ -265,6 +265,14 @@ export async function fetchCurrentUser(): Promise<User> {
   return res.json();
 }
 
+export async function fetchUsers(): Promise<User[]> {
+  const res = await fetch(`${API_BASE_URL}/auth/users`, {
+    headers: authHeaders(),
+  });
+  if (!res.ok) throw new Error("Failed to fetch users");
+  return res.json();
+}
+
 // ── Events API ───────────────────────────────────────────────
 
 export async function fetchEvents(): Promise<EventItem[]> {
@@ -755,6 +763,9 @@ export async function deleteNotice(noticeId: string): Promise<void> {
 export interface CommitteeMemberItem {
   id: string;
   society_id?: string | null;
+  user_id?: string | null;
+  linked_user_email?: string | null;
+  linked_user_name?: string | null;
   name: string;
   role: string;
   flat_number: string;
@@ -836,6 +847,31 @@ export async function applaudCommitteeMember(memberId: string): Promise<{ id: st
   });
   if (!res.ok) {
     throw new Error("Failed to applaud member");
+  }
+  return res.json();
+}
+
+export async function assignUserToCommitteeMember(memberId: string, userId: string): Promise<CommitteeMemberItem> {
+  const res = await fetch(`${API_BASE_URL}/committee/${memberId}/assign-user`, {
+    method: "POST",
+    headers: authHeaders(),
+    body: JSON.stringify({ user_id: userId }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to assign user to committee member");
+  }
+  return res.json();
+}
+
+export async function unlinkUserFromCommitteeMember(memberId: string, revertRole: boolean = true): Promise<CommitteeMemberItem> {
+  const res = await fetch(`${API_BASE_URL}/committee/${memberId}/unlink-user?revert_role=${revertRole}`, {
+    method: "DELETE",
+    headers: authHeaders(),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to unlink user from committee member");
   }
   return res.json();
 }
