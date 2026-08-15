@@ -29,11 +29,13 @@ import {
   QrCode,
   BarChart3,
   TrendingUp,
+  AlertCircle,
 } from "lucide-react";
 import FestiveBackgroundPattern from "@/components/FestiveBackgroundPattern";
 
 const NAV_ITEMS = [
   { href: "/", label: "Dashboard", icon: Home, badge: null },
+  { href: "/issues", label: "Issues & Helpdesk", icon: AlertCircle, badge: "AI Bot" },
   { href: "/events", label: "Events & Utsavs", icon: Calendar, badge: "Tiered" },
   { href: "/ledger", label: "Financial Ledger", icon: DollarSign, badge: "AI Sync" },
   { href: "/vendors", label: "Verified Vendors", icon: Users, badge: null },

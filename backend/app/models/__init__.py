@@ -6,6 +6,7 @@ from app.models.vendor import ServiceProvider, ProviderReview
 from app.models.meeting import Meeting, MeetingChunk
 from app.models.notice import Notice
 from app.models.committee import CommitteeMember
+from app.models.issue import Issue, IssueActivity
 
 __all__ = [
     "Society",
@@ -20,4 +21,6 @@ __all__ = [
     "MeetingChunk",
     "Notice",
     "CommitteeMember",
+    "Issue",
+    "IssueActivity",
 ]

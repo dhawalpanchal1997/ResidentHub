@@ -613,6 +613,20 @@ export interface AnalyticsOverviewData {
       reviews_count: number;
     }>;
   };
+  issues?: {
+    total_issues: number;
+    open_issues: number;
+    in_progress_issues: number;
+    resolved_issues: number;
+    resolution_rate: number;
+    avg_turnaround_hours: number;
+    categories: Array<{
+      category: string;
+      count: number;
+      resolved: number;
+      pct: number;
+    }>;
+  };
   insights: Array<{
     type: "positive" | "celebration" | "info" | "engagement";
     title: string;
@@ -771,6 +785,184 @@ export async function applaudCommitteeMember(memberId: string): Promise<{ id: st
   });
   if (!res.ok) {
     throw new Error("Failed to applaud member");
+  }
+  return res.json();
+}
+
+// ── Issues & Helpdesk API ──────────────────────────────────────
+
+export interface IssueActivityItem {
+  id: string;
+  issue_id: string;
+  action: string;
+  actor_name: string;
+  actor_role: string;
+  comment: string;
+  created_at: string;
+}
+
+export interface IssueItem {
+  id: string;
+  ticket_number: string;
+  society_id?: string | null;
+  user_id?: string | null;
+  flat_number: string;
+  reported_by: string;
+  title: string;
+  description: string;
+  category: "Plumbing" | "Electrical" | "Elevator" | "Security" | "Common Area" | "Cleanliness" | "Noise" | string;
+  priority: "low" | "medium" | "high" | "emergency" | string;
+  status: "open" | "assigned" | "in_progress" | "resolved" | "closed" | string;
+  location: string;
+  preferred_slot?: string | null;
+  photo_url?: string | null;
+  assigned_vendor_id?: string | null;
+  assigned_vendor_name?: string | null;
+  resolution_notes?: string | null;
+  resolved_at?: string | null;
+  created_at: string;
+  updated_at: string;
+  activities: IssueActivityItem[];
+}
+
+export interface IssueAnalyticsData {
+  total_issues: number;
+  open_issues: number;
+  in_progress_issues: number;
+  resolved_issues: number;
+  resolution_rate: number;
+  avg_turnaround_hours: number;
+  category_distribution: Array<{
+    category: string;
+    count: number;
+    resolved: number;
+    pct: number;
+  }>;
+  priority_breakdown: Array<{
+    priority: string;
+    count: number;
+    pct: number;
+  }>;
+  recent_resolved: number;
+}
+
+export async function fetchIssues(params?: {
+  flat_number?: string;
+  status?: string;
+  category?: string;
+  priority?: string;
+  search?: string;
+}): Promise<IssueItem[]> {
+  const query = new URLSearchParams();
+  if (params?.flat_number) query.append("flat_number", params.flat_number);
+  if (params?.status) query.append("status", params.status);
+  if (params?.category) query.append("category", params.category);
+  if (params?.priority) query.append("priority", params.priority);
+  if (params?.search) query.append("search", params.search);
+
+  const res = await fetch(`${API_BASE_URL}/issues/?${query.toString()}`, {
+    headers: authHeaders(),
+    cache: "no-store",
+  });
+  if (!res.ok) {
+    throw new Error("Failed to fetch issues");
+  }
+  return res.json();
+}
+
+export async function fetchIssueById(issueId: string): Promise<IssueItem> {
+  const res = await fetch(`${API_BASE_URL}/issues/${issueId}`, {
+    headers: authHeaders(),
+    cache: "no-store",
+  });
+  if (!res.ok) {
+    throw new Error("Failed to fetch issue details");
+  }
+  return res.json();
+}
+
+export async function createIssue(payload: {
+  title: string;
+  description: string;
+  category: string;
+  priority?: string;
+  location?: string;
+  preferred_slot?: string;
+  photo_url?: string;
+  flat_number?: string;
+  reported_by?: string;
+}): Promise<IssueItem> {
+  const res = await fetch(`${API_BASE_URL}/issues/`, {
+    method: "POST",
+    headers: authHeaders(),
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to log issue");
+  }
+  return res.json();
+}
+
+export async function updateIssue(
+  issueId: string,
+  payload: {
+    status?: string;
+    priority?: string;
+    assigned_vendor_id?: string;
+    assigned_vendor_name?: string;
+    resolution_notes?: string;
+  }
+): Promise<IssueItem> {
+  const res = await fetch(`${API_BASE_URL}/issues/${issueId}`, {
+    method: "PUT",
+    headers: authHeaders(),
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to update issue ticket");
+  }
+  return res.json();
+}
+
+export async function addIssueComment(
+  issueId: string,
+  payload: {
+    comment: string;
+    actor_name?: string;
+    actor_role?: string;
+  }
+): Promise<IssueActivityItem> {
+  const res = await fetch(`${API_BASE_URL}/issues/${issueId}/comments`, {
+    method: "POST",
+    headers: authHeaders(),
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to add activity comment");
+  }
+  return res.json();
+}
+
+export async function deleteIssue(issueId: string): Promise<void> {
+  const res = await fetch(`${API_BASE_URL}/issues/${issueId}`, {
+    method: "DELETE",
+    headers: authHeaders(),
+  });
+  if (!res.ok) {
+    throw new Error("Failed to delete issue ticket");
+  }
+}
+
+export async function fetchIssueAnalytics(): Promise<IssueAnalyticsData> {
+  const res = await fetch(`${API_BASE_URL}/issues/analytics/overview`, {
+    headers: authHeaders(),
+    cache: "no-store",
+  });
+  if (!res.ok) {
+    throw new Error("Failed to fetch issue analytics");
   }
   return res.json();
 }

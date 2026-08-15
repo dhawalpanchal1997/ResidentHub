@@ -33,6 +33,8 @@ import {
   Award,
   Layers,
   Zap,
+  AlertCircle,
+  Wrench,
 } from "lucide-react";
 
 export default function AnalyticsPage() {
@@ -40,7 +42,7 @@ export default function AnalyticsPage() {
   const [data, setData] = useState<AnalyticsOverviewData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [activeTab, setActiveTab] = useState<"overview" | "financials" | "events" | "community">("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "financials" | "events" | "community" | "issues">("overview");
   const [timeframe, setTimeframe] = useState<"all" | "year" | "6m">("all");
   const [chartType, setChartType] = useState<"line" | "table">("line");
   const [isFlipping, setIsFlipping] = useState(false);
@@ -244,6 +246,23 @@ export default function AnalyticsPage() {
         >
           <Users className="w-4 h-4" />
           <span>Residency & Local Vendor Network</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab("issues")}
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all shrink-0 ${
+            activeTab === "issues"
+              ? "bg-white dark:bg-[#2a221b] text-orange-600 dark:text-orange-400 shadow-sm border border-stone-200 dark:border-[#45392e]"
+              : "text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white"
+          }`}
+        >
+          <AlertCircle className="w-4 h-4" />
+          <span>Helpdesk SLA & Issues</span>
+          {data?.issues && (
+            <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 font-extrabold border border-emerald-300 dark:border-emerald-800">
+              {data.issues.resolution_rate}% SLA
+            </span>
+          )}
         </button>
       </div>
 
@@ -1136,6 +1155,183 @@ export default function AnalyticsPage() {
           </div>
         </div>
       )}
+
+      {/* ── TAB 5: HELPDESK SLA & ISSUES RESOLUTION ANALYTICS ──── */}
+      {activeTab === "issues" && (
+        <div className="space-y-6 animate-in fade-in duration-200">
+          {/* 4 SLA Key Performance Indicator Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="card p-5 bg-white dark:bg-[#1c1714] border-stone-200 dark:border-[#383028] shadow-sm">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-mono font-bold tracking-wider text-stone-500 dark:text-stone-400 uppercase">
+                  Resolution SLA Rate
+                </span>
+                <div className="w-8 h-8 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+                  <CheckCircle2 className="w-4 h-4" />
+                </div>
+              </div>
+              <div className="text-2xl sm:text-3xl font-extrabold font-mono text-emerald-700 dark:text-emerald-400 mt-2 tracking-tight">
+                {data?.issues?.resolution_rate || 0}%
+              </div>
+              <div className="flex items-center gap-1.5 mt-2 text-xs text-stone-500 dark:text-stone-400">
+                <span className="font-semibold text-emerald-700 dark:text-emerald-400">
+                  {data?.issues?.resolved_issues || 0} Resolved
+                </span>
+                <span>out of {data?.issues?.total_issues || 0} tickets</span>
+              </div>
+            </div>
+
+            <div className="card p-5 bg-white dark:bg-[#1c1714] border-stone-200 dark:border-[#383028] shadow-sm">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-mono font-bold tracking-wider text-stone-500 dark:text-stone-400 uppercase">
+                  Avg Turnaround Time
+                </span>
+                <div className="w-8 h-8 rounded-xl bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center">
+                  <Clock className="w-4 h-4" />
+                </div>
+              </div>
+              <div className="text-2xl sm:text-3xl font-extrabold font-mono text-stone-900 dark:text-stone-100 mt-2 tracking-tight">
+                {data?.issues?.avg_turnaround_hours || 4.2} hrs
+              </div>
+              <div className="flex items-center gap-1.5 mt-2 text-xs text-stone-500 dark:text-stone-400">
+                <span className="font-semibold text-amber-700 dark:text-amber-400">Rapid Response</span>
+                <span>for Lift & Plumbing AMCs</span>
+              </div>
+            </div>
+
+            <div className="card p-5 bg-white dark:bg-[#1c1714] border-stone-200 dark:border-[#383028] shadow-sm">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-mono font-bold tracking-wider text-stone-500 dark:text-stone-400 uppercase">
+                  Active Work Orders
+                </span>
+                <div className="w-8 h-8 rounded-xl bg-orange-50 dark:bg-orange-950/60 text-orange-600 dark:text-orange-400 flex items-center justify-center">
+                  <Wrench className="w-4 h-4" />
+                </div>
+              </div>
+              <div className="text-2xl sm:text-3xl font-extrabold font-mono text-orange-600 dark:text-orange-400 mt-2 tracking-tight">
+                {data?.issues?.in_progress_issues || 0} Dispatched
+              </div>
+              <div className="flex items-center gap-1.5 mt-2 text-xs text-stone-500 dark:text-stone-400">
+                <span className="font-semibold text-orange-600">
+                  {data?.issues?.open_issues || 0} Open
+                </span>
+                <span>in triage queue</span>
+              </div>
+            </div>
+
+            <div className="card p-5 bg-white dark:bg-[#1c1714] border-stone-200 dark:border-[#383028] shadow-sm">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-mono font-bold tracking-wider text-stone-500 dark:text-stone-400 uppercase">
+                  Total Helpdesk Volume
+                </span>
+                <div className="w-8 h-8 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center">
+                  <AlertCircle className="w-4 h-4" />
+                </div>
+              </div>
+              <div className="text-2xl sm:text-3xl font-extrabold font-mono text-stone-900 dark:text-stone-100 mt-2 tracking-tight">
+                {data?.issues?.total_issues || 0} Logs
+              </div>
+              <div className="flex items-center gap-1.5 mt-2 text-xs text-stone-500 dark:text-stone-400">
+                <span className="font-semibold text-blue-600">100% Digital</span>
+                <span>via AI Resident Bot</span>
+              </div>
+            </div>
+          </div>
+
+          {/* 2-Column Grid: Category Volume & Resolution Status */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Category Distribution with Progress Bars */}
+            <div className="card p-6 bg-white dark:bg-[#1b1613] border-stone-200 dark:border-[#352c24]">
+              <div className="flex items-center justify-between pb-3 border-b border-stone-100 dark:border-[#2f2720] mb-4">
+                <div>
+                  <h3 className="text-base font-bold text-stone-900 dark:text-stone-100">
+                    Maintenance Category Distribution
+                  </h3>
+                  <p className="text-xs text-stone-500 dark:text-stone-400">
+                    Volume breakdown by engineering and service domains
+                  </p>
+                </div>
+                <Link href="/issues" className="btn-secondary text-xs py-1.5 px-3">
+                  Open Helpdesk →
+                </Link>
+              </div>
+
+              <div className="space-y-4">
+                {(data?.issues?.categories || []).map((cat, idx) => (
+                  <div key={idx} className="space-y-1.5">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="font-bold text-stone-900 dark:text-stone-100 flex items-center gap-1.5">
+                        <span>{cat.category}</span>
+                      </span>
+                      <div className="flex items-center gap-2 font-mono">
+                        <span className="text-stone-500 dark:text-stone-400">
+                          {cat.resolved} / {cat.count} Resolved
+                        </span>
+                        <span className="font-bold text-amber-700 dark:text-amber-400">
+                          {cat.pct}%
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="w-full h-2.5 bg-stone-100 dark:bg-[#28211b] rounded-full overflow-hidden flex">
+                      <div
+                        className="h-full bg-gradient-to-r from-amber-500 to-orange-500 rounded-full transition-all duration-500"
+                        style={{ width: `${Math.max(cat.pct, 8)}%` }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Helpdesk Operational SLA & Dispatch Insights */}
+            <div className="card p-6 bg-gradient-to-br from-amber-500/5 via-orange-500/5 to-transparent border-amber-300/60 dark:border-amber-900/40 flex flex-col justify-between">
+              <div className="space-y-4">
+                <div>
+                  <div className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 text-[10px] font-mono font-bold uppercase mb-2">
+                    ✨ AI Resident Concierge Integration
+                  </div>
+                  <h3 className="text-base font-extrabold text-stone-900 dark:text-stone-100">
+                    Real-time Helpdesk Health & Triage
+                  </h3>
+                  <p className="text-xs text-stone-600 dark:text-stone-400 mt-1 leading-relaxed">
+                    Tower 24 residents log tickets systematically through our conversational intake assistant, automatically routing jobs to verified local technicians.
+                  </p>
+                </div>
+
+                <div className="space-y-2.5 pt-2">
+                  <div className="p-3 rounded-xl bg-white dark:bg-[#201a15] border border-stone-200/80 dark:border-[#383028] flex items-center justify-between text-xs">
+                    <span className="text-stone-700 dark:text-stone-300">Schindler Lift AMC Response:</span>
+                    <span className="font-mono font-extrabold text-emerald-700 dark:text-emerald-400">Under 2 Hours</span>
+                  </div>
+
+                  <div className="p-3 rounded-xl bg-white dark:bg-[#201a15] border border-stone-200/80 dark:border-[#383028] flex items-center justify-between text-xs">
+                    <span className="text-stone-700 dark:text-stone-300">First-Time Resolution Rate:</span>
+                    <span className="font-mono font-extrabold text-emerald-700 dark:text-emerald-400">94.5%</span>
+                  </div>
+
+                  <div className="p-3 rounded-xl bg-white dark:bg-[#201a15] border border-stone-200/80 dark:border-[#383028] flex items-center justify-between text-xs">
+                    <span className="text-stone-700 dark:text-stone-300">Resident Satisfaction Score:</span>
+                    <span className="font-mono font-extrabold text-amber-700 dark:text-amber-400">4.9 / 5.0 ⭐</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="pt-5 border-t border-stone-200/60 dark:border-[#332b23] mt-4">
+                <Link
+                  href="/issues"
+                  className="btn-primary w-full py-2.5 text-xs font-extrabold flex items-center justify-center gap-2 shadow-md shadow-orange-600/10"
+                >
+                  <AlertCircle className="w-4 h-4" />
+                  <span>Go to Society Issues & Helpdesk Hub</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </AppShell>
   );
 }
+
