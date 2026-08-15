@@ -13,6 +13,7 @@ interface AuthContextType {
     full_name: string;
     flat_number: string;
     phone_number?: string;
+    residency_type?: "Owner" | "Renter";
     role?: string;
   }) => Promise<void>;
   logout: () => void;

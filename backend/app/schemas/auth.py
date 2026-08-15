@@ -7,6 +7,7 @@ class UserBase(BaseModel):
     full_name: str
     flat_number: str
     phone_number: Optional[str] = None
+    residency_type: Optional[str] = "Owner"
     role: Optional[str] = "member"
     
     @field_validator('email')

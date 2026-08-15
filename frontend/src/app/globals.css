@@ -26,6 +26,13 @@
   --card-shadow-hover: 0 14px 28px -6px rgba(120, 53, 15, 0.09), 0 4px 8px -2px rgba(120, 53, 15, 0.04);
 }
 
+.dark {
+  --color-sandalwood: #141210;
+  --color-sandalwood-dark: #1c1917;
+  --card-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.45);
+  --card-shadow-hover: 0 16px 32px -4px rgba(0, 0, 0, 0.65);
+}
+
 * {
   box-sizing: border-box;
 }
@@ -40,6 +47,12 @@ body {
   letter-spacing: -0.01em;
   overflow-x: hidden;
   position: relative;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.dark body {
+  background-color: #12100e;
+  color: #f5f5f4;
 }
 
 /* Monospace font utility for numbers, currency, and reference codes */
@@ -68,6 +81,12 @@ button, a, input, select, textarea, .card, .badge {
 ::-webkit-scrollbar-thumb:hover {
   background: #b5aba0;
 }
+.dark ::-webkit-scrollbar-thumb {
+  background: #383430;
+}
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #57534e;
+}
 
 /* Keyframe Animations for Festive Housing Theme */
 @keyframes float-slow {
@@ -78,12 +97,6 @@ button, a, input, select, textarea, .card, .badge {
 @keyframes diya-flicker {
   0%, 100% { opacity: 0.85; transform: scale(1); filter: drop-shadow(0 0 12px rgba(245, 158, 11, 0.6)); }
   50% { opacity: 1; transform: scale(1.03); filter: drop-shadow(0 0 18px rgba(234, 88, 12, 0.8)); }
-}
-
-@keyframes gentle-drift {
-  0% { transform: translateY(0px) scale(1); }
-  50% { transform: translateY(-8px) scale(1.005); }
-  100% { transform: translateY(0px) scale(1); }
 }
 
 @keyframes cardEntrance {
@@ -105,10 +118,6 @@ button, a, input, select, textarea, .card, .badge {
   animation: diya-flicker 2.5s ease-in-out infinite;
 }
 
-.animate-gentle-drift {
-  animation: gentle-drift 12s ease-in-out infinite;
-}
-
 .card-entrance {
   animation: cardEntrance 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
@@ -127,13 +136,22 @@ button, a, input, select, textarea, .card, .badge {
   border-radius: 24px;
   border: 1px solid #eee7dd;
   box-shadow: var(--card-shadow);
-  transition: box-shadow 0.25s ease, border-color 0.2s ease;
+  transition: box-shadow 0.25s ease, border-color 0.2s ease, background-color 0.3s ease;
 }
 
 .card:hover {
   box-shadow: var(--card-shadow-hover);
   border-color: #dfd5c6;
-  /* Steady: no translateY jump on hover */
+}
+
+.dark .card {
+  background: rgba(28, 25, 23, 0.94);
+  border-color: #383430;
+  color: #f5f5f4;
+}
+
+.dark .card:hover {
+  border-color: #57534e;
 }
 
 /* High-Impact Stat Cards with Indian Festive Tones */
@@ -162,17 +180,32 @@ button, a, input, select, textarea, .card, .badge {
   border: 1px solid #fde047;
   box-shadow: 0 4px 16px -4px rgba(202, 138, 4, 0.15);
 }
+.dark .stat-card-income {
+  background: linear-gradient(135deg, #422006 0%, #713f12 100%);
+  border-color: #a16207;
+  color: #fef08a;
+}
 
 .stat-card-expense {
   background: linear-gradient(135deg, #fff1f2 0%, #ffe4e6 100%);
   border: 1px solid #fecdd3;
   box-shadow: 0 4px 16px -4px rgba(225, 29, 72, 0.12);
 }
+.dark .stat-card-expense {
+  background: linear-gradient(135deg, #4c0519 0%, #881337 100%);
+  border-color: #9f1239;
+  color: #fecdd3;
+}
 
 .stat-card-neutral {
   background: linear-gradient(135deg, #f0fdfa 0%, #ccfbf1 100%);
   border: 1px solid #99f6e4;
   box-shadow: 0 4px 16px -4px rgba(13, 148, 136, 0.12);
+}
+.dark .stat-card-neutral {
+  background: linear-gradient(135deg, #042f2e 0%, #115e59 100%);
+  border-color: #0d9488;
+  color: #99f6e4;
 }
 
 /* Cultural Badges */
@@ -192,11 +225,21 @@ button, a, input, select, textarea, .card, .badge {
   color: #15803d;
   border: 1px solid #bbf7d0;
 }
+.dark .badge-approved {
+  background-color: rgba(22, 101, 52, 0.3);
+  color: #86efac;
+  border-color: rgba(34, 197, 94, 0.3);
+}
 
 .badge-pending {
   background-color: #fef3c7;
   color: #b45309;
   border: 1px solid #fde68a;
+}
+.dark .badge-pending {
+  background-color: rgba(180, 83, 9, 0.3);
+  color: #fcd34d;
+  border-color: rgba(245, 158, 11, 0.3);
 }
 
 .badge-rejected {
@@ -204,11 +247,21 @@ button, a, input, select, textarea, .card, .badge {
   color: #b91c1c;
   border: 1px solid #fecaca;
 }
+.dark .badge-rejected {
+  background-color: rgba(185, 28, 28, 0.3);
+  color: #fca5a5;
+  border-color: rgba(239, 68, 68, 0.3);
+}
 
 .badge-admin {
   background-color: #ffedd5;
   color: #c2410c;
   border: 1px solid #fed7aa;
+}
+.dark .badge-admin {
+  background-color: rgba(194, 65, 12, 0.3);
+  color: #fdba74;
+  border-color: rgba(249, 115, 22, 0.3);
 }
 
 .badge-member {
@@ -216,11 +269,21 @@ button, a, input, select, textarea, .card, .badge {
   color: #0369a1;
   border: 1px solid #bae6fd;
 }
+.dark .badge-member {
+  background-color: rgba(3, 105, 161, 0.3);
+  color: #7dd3fc;
+  border-color: rgba(14, 165, 233, 0.3);
+}
 
 .badge-festive {
   background: linear-gradient(135deg, #fef3c7 0%, #ffedd5 100%);
   color: #9a3412;
   border: 1px solid #fed7aa;
+}
+.dark .badge-festive {
+  background: linear-gradient(135deg, rgba(120, 53, 15, 0.4) 0%, rgba(154, 52, 18, 0.4) 100%);
+  color: #fdba74;
+  border-color: rgba(245, 158, 11, 0.3);
 }
 
 /* Modern Form Controls */
@@ -233,7 +296,7 @@ button, a, input, select, textarea, .card, .badge {
   color: #1c1917;
   background-color: #ffffff;
   outline: none;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease, color 0.2s ease;
 }
 
 .form-input:focus {
@@ -245,6 +308,19 @@ button, a, input, select, textarea, .card, .badge {
   color: #a8a29e;
 }
 
+.dark .form-input {
+  background-color: #1c1917;
+  border-color: #383430;
+  color: #fafaf9;
+}
+.dark .form-input:focus {
+  border-color: #f59e0b;
+  box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.2);
+}
+.dark .form-input::placeholder {
+  color: #78716c;
+}
+
 .form-label {
   display: block;
   font-size: 0.8125rem;
@@ -252,8 +328,11 @@ button, a, input, select, textarea, .card, .badge {
   color: #44403c;
   margin-bottom: 0.375rem;
 }
+.dark .form-label {
+  color: #d6d3d1;
+}
 
-/* Festive Buttons (Shadow on hover, no position movement) */
+/* Festive Buttons */
 .btn-primary {
   display: inline-flex;
   align-items: center;
@@ -274,7 +353,6 @@ button, a, input, select, textarea, .card, .badge {
 .btn-primary:hover:not(:disabled) {
   opacity: 0.96;
   box-shadow: 0 6px 20px rgba(234, 88, 12, 0.38);
-  /* Steady: no translateY */
 }
 
 .btn-primary:active:not(:disabled) {
@@ -307,7 +385,16 @@ button, a, input, select, textarea, .card, .badge {
   background: #ebe3d6;
   color: #1c1917;
   box-shadow: 0 2px 8px rgba(120, 53, 15, 0.06);
-  /* Steady: no translateY */
+}
+
+.dark .btn-secondary {
+  background: #292524;
+  color: #e7e5e4;
+  border-color: #44403c;
+}
+.dark .btn-secondary:hover {
+  background: #383430;
+  color: #fafaf9;
 }
 
 .btn-ghost {
@@ -328,6 +415,13 @@ button, a, input, select, textarea, .card, .badge {
   background: #f5efe6;
   color: #1c1917;
 }
+.dark .btn-ghost {
+  color: #a8a29e;
+}
+.dark .btn-ghost:hover {
+  background: #292524;
+  color: #fafaf9;
+}
 
 /* Pill Tabs */
 .tab-pill {
@@ -347,6 +441,11 @@ button, a, input, select, textarea, .card, .badge {
   color: #ffffff;
   box-shadow: 0 3px 10px rgba(41, 37, 36, 0.2);
 }
+.dark .tab-pill-active {
+  background: var(--brand-saffron-gold);
+  color: #ffffff;
+  box-shadow: 0 4px 14px rgba(234, 88, 12, 0.3);
+}
 
 .tab-pill-inactive {
   background-color: #ffffff;
@@ -357,14 +456,23 @@ button, a, input, select, textarea, .card, .badge {
   background-color: #faf6f0;
   color: #1c1917;
 }
+.dark .tab-pill-inactive {
+  background-color: #1c1917;
+  color: #a8a29e;
+  border-color: #383430;
+}
+.dark .tab-pill-inactive:hover {
+  background-color: #292524;
+  color: #f5f5f4;
+}
 
 /* Glassmorphism & Modals */
 .modal-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(28, 25, 23, 0.75);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  background: rgba(18, 16, 14, 0.8);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   z-index: 50;
   display: flex;
   align-items: center;
@@ -382,6 +490,12 @@ button, a, input, select, textarea, .card, .badge {
   max-height: 90vh;
   overflow-y: auto;
   animation: modalSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.dark .modal-content {
+  background: #1c1917;
+  border-color: #383430;
+  box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.05);
+  color: #f5f5f4;
 }
 
 @keyframes modalFadeIn {

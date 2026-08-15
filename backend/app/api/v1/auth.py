@@ -26,6 +26,7 @@ async def register_user(user_in: UserCreate, db: AsyncSession = Depends(get_db))
         full_name=user_in.full_name,
         flat_number=user_in.flat_number,
         phone_number=user_in.phone_number,
+        residency_type=user_in.residency_type or "Owner",
         role=user_in.role or "member"
     )
     db.add(new_user)

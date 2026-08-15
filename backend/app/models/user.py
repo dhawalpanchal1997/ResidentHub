@@ -14,6 +14,7 @@ class User(Base):
     full_name = Column(String(255), nullable=False)
     flat_number = Column(String(50), nullable=False)
     phone_number = Column(String(20), nullable=True)
+    residency_type = Column(String(20), default="Owner", nullable=True)  # "Owner" | "Renter"
     role = Column(String(20), default="member")  # "admin" | "member"
     created_at = Column(DateTime, default=datetime.utcnow)
 

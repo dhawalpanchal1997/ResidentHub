@@ -12,6 +12,7 @@ export interface User {
   full_name: string;
   flat_number: string;
   phone_number?: string;
+  residency_type?: "Owner" | "Renter";
   role: "admin" | "member";
   society_id?: string;
   created_at?: string;
@@ -209,6 +210,7 @@ export async function registerUser(payload: {
   full_name: string;
   flat_number: string;
   phone_number?: string;
+  residency_type?: "Owner" | "Renter";
   role?: string;
 }): Promise<AuthResponse> {
   const res = await fetch(`${API_BASE_URL}/auth/register`, {
