@@ -530,3 +530,100 @@ export async function addVendorReview(
   }
   return res.json();
 }
+
+// ── Analytics Interfaces & API ────────────────────────────────
+
+export interface AnalyticsOverviewData {
+  financials: {
+    total_income: number;
+    total_expense: number;
+    reserve_fund: number;
+    savings_rate: number;
+    monthly_cashflow: Array<{
+      month: string;
+      income: number;
+      expense: number;
+      net: number;
+    }>;
+    category_outflow: Array<{
+      category: string;
+      amount: number;
+      percentage: number;
+      color: string;
+    }>;
+  };
+  events: {
+    total_events: number;
+    total_footfall: number;
+    avg_attendance: number;
+    total_collection: number;
+    total_expense: number;
+    net_pnl: number;
+    demographics: {
+      adults_count: number;
+      adults_pct: number;
+      children_count: number;
+      children_pct: number;
+      seniors_count: number;
+      seniors_pct: number;
+    };
+    rsvp_funnel: {
+      approved: number;
+      pending: number;
+      rejected: number;
+      total: number;
+    };
+    performance: Array<{
+      id: string;
+      title: string;
+      date: string;
+      venue: string;
+      attendees: number;
+      collection: number;
+      expense: number;
+      net_balance: number;
+      roi_status: "Surplus" | "Deficit";
+    }>;
+  };
+  community: {
+    total_residents: number;
+    owners: number;
+    owners_pct: number;
+    renters: number;
+    renters_pct: number;
+    participating_flats: number;
+    participation_rate: number;
+  };
+  vendors: {
+    total_vendors: number;
+    avg_rating: number;
+    categories: Array<{
+      category: string;
+      count: number;
+    }>;
+    top_vendors: Array<{
+      id: string;
+      name: string;
+      category: string;
+      rating: number;
+      phone: string;
+      reviews_count: number;
+    }>;
+  };
+  insights: Array<{
+    type: "positive" | "celebration" | "info" | "engagement";
+    title: string;
+    desc: string;
+  }>;
+}
+
+export async function fetchAnalyticsOverview(): Promise<AnalyticsOverviewData> {
+  const res = await fetch(`${API_BASE_URL}/analytics/overview/`, {
+    headers: authHeaders(),
+    cache: "no-store",
+  });
+  if (!res.ok) {
+    throw new Error("Failed to fetch society analytics");
+  }
+  return res.json();
+}

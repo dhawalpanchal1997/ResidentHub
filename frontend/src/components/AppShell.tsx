@@ -27,6 +27,8 @@ import {
   Sun,
   Moon,
   QrCode,
+  BarChart3,
+  TrendingUp,
 } from "lucide-react";
 import FestiveBackgroundPattern from "@/components/FestiveBackgroundPattern";
 
@@ -35,6 +37,7 @@ const NAV_ITEMS = [
   { href: "/events", label: "Events & Utsavs", icon: Calendar, badge: "Tiered" },
   { href: "/ledger", label: "Financial Ledger", icon: DollarSign, badge: "AI Sync" },
   { href: "/vendors", label: "Verified Vendors", icon: Users, badge: null },
+  { href: "/analytics", label: "Society Analytics", icon: BarChart3, badge: "AI Insights" },
 ];
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
