@@ -51,6 +51,10 @@ import {
   Crown,
   Medal,
   ExternalLink,
+  Heart,
+  ThumbsUp,
+  Check,
+  Star,
 } from "lucide-react";
 import Link from "next/link";
 import HousingHeroVisual from "@/components/HousingHeroVisual";
@@ -67,6 +71,76 @@ const NOTICE_CATEGORIES = [
 
 const NOTICE_PRIORITIES = ["normal", "high", "urgent"];
 
+interface CommitteeLeader {
+  id: string;
+  name: string;
+  role: string;
+  flat: string;
+  badge: string;
+  focus: string;
+  achievements: string[];
+  initialApplauds: number;
+}
+
+const COMMITTEE_HONOREES: CommitteeLeader[] = [
+  {
+    id: "dhawal-panchal",
+    name: "Shri Dhawal Panchal",
+    role: "👑 Society Chairman & Governance Lead",
+    flat: "Flat B-201",
+    badge: "Founding Trustee",
+    focus: "General Society Governance, Rooftop Solar Grid Transition & Zero-Deficit Planning",
+    achievements: [
+      "100% Rooftop Solar Net-Meter Grid Sync (~₹18.5k/mo power savings)",
+      "Transparent Digital Maintenance Ledger & By-Law Compliance",
+      "Unified ResidentHub Platform Deployment for 96 Flats",
+    ],
+    initialApplauds: 154,
+  },
+  {
+    id: "priya-sharma",
+    name: "Smt. Priya Sharma",
+    role: "📜 Hon. Secretary & Cultural Convener",
+    flat: "Flat A-102",
+    badge: "Cultural Dynamo",
+    focus: "Festival Orchestration, Resident Communications & Community AGM Operations",
+    achievements: [
+      "98% Verified Resident Turnout across 5 Major Society Festivals",
+      "Instant Digital QR Entry Pass System Implementation",
+      "Quarterly General Body Meeting (AGM) Minutes Distribution",
+    ],
+    initialApplauds: 138,
+  },
+  {
+    id: "rajesh-kulkarni",
+    name: "CA Rajesh Kulkarni",
+    role: "💼 Hon. Treasurer & Statutory Auditor",
+    flat: "Flat C-404",
+    badge: "Fiscal Guardian",
+    focus: "Society Reserve Fund Management, AI Bank Reconciliation & Vendor Audits",
+    achievements: [
+      "₹1.54 Lakhs+ Society Reserve Fund Corpus Growth",
+      "Real-time Bank Statement Reconciliation & Zero Unreconciled Entries",
+      "Quarterly Statutory Audit Completion with Zero Objections",
+    ],
+    initialApplauds: 122,
+  },
+  {
+    id: "vikram-malhotra",
+    name: "Col. Vikram Malhotra (Retd.)",
+    role: "🛡️ Estate, Safety & Infrastructure Convener",
+    flat: "Flat B-302",
+    badge: "Safety Custodian",
+    focus: "24/7 Security Operations, Schindler Lift AMCs & Fire Safety Standards",
+    achievements: [
+      "100% On-Time Lift AMCs with Emergency Sensor Safety Testing",
+      "Overhead & Underground Tank Bi-Annual Chlorination Oversight",
+      "Multi-Shift Gate Security Protocol & Automated Visitor Logging",
+    ],
+    initialApplauds: 145,
+  },
+];
+
 export default function DashboardPage() {
   const { user, isAdmin, login } = useAuth();
   const [events, setEvents] = useState<EventItem[]>([]);
@@ -75,6 +149,15 @@ export default function DashboardPage() {
   const [notices, setNotices] = useState<NoticeItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedNoticeCategory, setSelectedNoticeCategory] = useState<string>("All");
+
+  // Committee Applauds state
+  const [applauds, setApplauds] = useState<Record<string, number>>({
+    "dhawal-panchal": 154,
+    "priya-sharma": 138,
+    "rajesh-kulkarni": 122,
+    "vikram-malhotra": 145,
+  });
+  const [applaudedIds, setApplaudedIds] = useState<Record<string, boolean>>({});
 
   // Ticket QR Pass Modal state
   const [ticketModalData, setTicketModalData] = useState<{
@@ -125,8 +208,19 @@ export default function DashboardPage() {
     return () => clearInterval(timer);
   }, [notices]);
 
+  const handleApplaud = (id: string) => {
+    const wasApplauded = applaudedIds[id];
+    setApplauds((prev) => ({
+      ...prev,
+      [id]: (prev[id] || 0) + (wasApplauded ? -1 : 1),
+    }));
+    setApplaudedIds((prev) => ({
+      ...prev,
+      [id]: !wasApplauded,
+    }));
+  };
+
   const handleOpenNoticeModal = async () => {
-    // If not logged in as admin, automatically log in as admin for demo convenience
     if (!isAdmin) {
       try {
         await login("admin@residenthub.com", "admin123");
@@ -228,7 +322,6 @@ export default function DashboardPage() {
       seniors: number;
     }>();
 
-    // Aggregate from all event RSVPs
     events.forEach((ev) => {
       (ev.rsvps || []).forEach((r) => {
         if (r.status === "approved" || r.total_amount > 0) {
@@ -262,7 +355,6 @@ export default function DashboardPage() {
       });
     });
 
-    // Fallback seed entries if database has few registrations to demonstrate full leaderboard
     const seedData = [
       { flat_number: "B-201", member_name: "Anil Sharma", total_spent: 3600, events_count: 3, total_attendees: 6, adults: 4, children: 1, seniors: 1 },
       { flat_number: "A-102", member_name: "Priya Patel", total_spent: 2850, events_count: 2, total_attendees: 5, adults: 3, children: 2, seniors: 0 },
@@ -655,7 +747,7 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            {/* 📋 3. SOCIETY EVENTS TABLE & SCHEDULE (NO INLINE RSVP - USER ALWAYS MANAGES IN EVENTSHUB) */}
+            {/* 📋 3. SOCIETY EVENTS TABLE & SCHEDULE */}
             <div className="card p-6 card-entrance stagger-2">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
                 <div>
@@ -668,7 +760,6 @@ export default function DashboardPage() {
                   </p>
                 </div>
 
-                {/* Primary Action Button to Manage / RSVP in Events Hub */}
                 <Link
                   href="/events"
                   className="btn-primary text-xs py-2 px-4 self-start sm:self-auto flex items-center gap-2 shadow-sm"
@@ -783,7 +874,7 @@ export default function DashboardPage() {
                               )}
                             </td>
 
-                            {/* Action: View QR if approved pass exists, or Link to Events Hub */}
+                            {/* Action */}
                             <td className="py-3.5 px-3 text-right">
                               {userRsvp && userRsvp.status === "approved" ? (
                                 <button
@@ -812,7 +903,101 @@ export default function DashboardPage() {
               )}
             </div>
 
-            {/* 🏆 4. LOWER 2-COLUMN GRID: EVENT SPEND LEADERBOARD & EMERGENCY CONTACTS */}
+            {/* 🌟 4. COMMITTEE LEADERSHIP & VOLUNTEER HALL OF HONOR */}
+            <div className="card p-6 bg-gradient-to-br from-amber-500/5 via-orange-500/5 to-transparent border-amber-300/60 dark:border-amber-900/40 shadow-sm">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-base font-extrabold text-stone-900 dark:text-stone-100 flex items-center gap-2">
+                      <HeartHandshake className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+                      <span>Society Leadership & Committee Hall of Honor</span>
+                    </h2>
+                    <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-950/80 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-800">
+                      ✨ 100% Voluntary Service
+                    </span>
+                  </div>
+                  <p className="text-xs text-stone-500 dark:text-stone-400 mt-0.5">
+                    Recognizing the dedicated resident committee members, event conveners, and trustees sustaining Tower 24
+                  </p>
+                </div>
+
+                <div className="text-xs text-stone-500 dark:text-stone-400 flex items-center gap-1.5 font-mono">
+                  <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
+                  <span>Runwal Gardens T24 Committee 2026</span>
+                </div>
+              </div>
+
+              {/* Committee Members Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                {COMMITTEE_HONOREES.map((leader) => {
+                  const applaudCount = applauds[leader.id] || leader.initialApplauds;
+                  const isApplauded = applaudedIds[leader.id];
+
+                  return (
+                    <div
+                      key={leader.id}
+                      className="p-4 rounded-2xl bg-white dark:bg-[#1b1613] border border-stone-200 dark:border-[#383028] hover:border-amber-400 dark:hover:border-amber-600 shadow-xs hover:shadow-md transition-all flex flex-col justify-between space-y-3.5 group"
+                    >
+                      <div>
+                        {/* Header & Flat Badge */}
+                        <div className="flex items-start justify-between gap-2 mb-2.5">
+                          <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-amber-500 to-orange-500 text-white font-extrabold text-sm flex items-center justify-center shadow-md shadow-orange-500/20 ring-2 ring-amber-200 dark:ring-amber-950">
+                            {leader.name.split(" ").slice(-1)[0].charAt(0)}
+                          </div>
+                          <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-stone-100 dark:bg-[#28211b] text-stone-700 dark:text-stone-300 border border-stone-200 dark:border-[#383028]">
+                            {leader.flat}
+                          </span>
+                        </div>
+
+                        {/* Name & Role */}
+                        <h3 className="font-extrabold text-stone-900 dark:text-stone-100 text-sm leading-tight group-hover:text-orange-600 dark:group-hover:text-orange-400 transition-colors">
+                          {leader.name}
+                        </h3>
+                        <p className="text-[11px] font-bold text-amber-700 dark:text-amber-400 mt-0.5">
+                          {leader.role}
+                        </p>
+
+                        <p className="text-[11px] text-stone-600 dark:text-stone-400 mt-2 leading-relaxed">
+                          {leader.focus}
+                        </p>
+
+                        {/* Key Milestones */}
+                        <div className="mt-3 space-y-1.5 pt-2.5 border-t border-stone-100 dark:border-[#2d251f]">
+                          {leader.achievements.map((ach, i) => (
+                            <div key={i} className="flex items-start gap-1.5 text-[10px] text-stone-500 dark:text-stone-400 leading-snug">
+                              <Check className="w-3 h-3 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+                              <span>{ach}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Interactive Appreciation Button */}
+                      <button
+                        onClick={() => handleApplaud(leader.id)}
+                        className={`w-full py-1.5 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow-xs ${
+                          isApplauded
+                            ? "bg-gradient-to-r from-rose-500 to-amber-500 text-white shadow-md shadow-rose-500/20"
+                            : "bg-stone-50 hover:bg-amber-50 dark:bg-[#251e18] dark:hover:bg-[#2f2720] text-stone-700 dark:text-stone-300 border border-stone-200 dark:border-[#383028]"
+                        }`}
+                      >
+                        <Heart
+                          className={`w-3.5 h-3.5 ${
+                            isApplauded ? "fill-white text-white animate-bounce" : "text-rose-500"
+                          }`}
+                        />
+                        <span>{isApplauded ? "Applauded!" : "Express Thanks"}</span>
+                        <span className="font-mono text-[11px] ml-0.5 font-bold">
+                          ({applaudCount})
+                        </span>
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* 🏆 5. LOWER 2-COLUMN GRID: EVENT SPEND LEADERBOARD & EMERGENCY CONTACTS */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               {/* Left (2 Cols): Resident Event Spend Leaderboard */}
               <div className="lg:col-span-2 card p-6 card-entrance stagger-3">
@@ -835,7 +1020,7 @@ export default function DashboardPage() {
                   </Link>
                 </div>
 
-                {/* Leaderboard Table / Cards */}
+                {/* Leaderboard Table */}
                 <div className="overflow-x-auto">
                   <table className="w-full text-left border-collapse text-xs">
                     <thead>
