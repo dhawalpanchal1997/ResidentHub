@@ -115,22 +115,23 @@ export default function AnalyticsPage() {
 
       {/* Top 4 KPI High-Impact Overview Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        {/* KPI 1: Society Reserve (High-Contrast Obsidian Stat Card) */}
-        <div className="stat-card-balance p-5 rounded-3xl relative overflow-hidden text-white shadow-xl">
+        {/* KPI 1: Society Reserve */}
+        <div className="card p-5 bg-white dark:bg-[#1c1714] border-stone-200 dark:border-[#383028] shadow-sm">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-mono font-bold tracking-wider text-amber-300 uppercase">
+            <span className="text-[11px] font-mono font-bold tracking-wider text-stone-500 dark:text-stone-400 uppercase">
               Society Reserve Fund
             </span>
-            <div className="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-300 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-xl bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center">
               <DollarSign className="w-4 h-4" />
             </div>
           </div>
-          <div className="text-2xl sm:text-3xl font-extrabold font-mono mt-2 tracking-tight text-white">
+          <div className="text-2xl sm:text-3xl font-extrabold font-mono text-stone-900 dark:text-stone-100 mt-2 tracking-tight">
             {loading ? "..." : formatINR(data?.financials.reserve_fund || 0)}
           </div>
-          <div className="flex items-center gap-1.5 mt-2 text-xs text-amber-200 font-medium">
-            <ArrowUpRight className="w-3.5 h-3.5 text-emerald-400" />
-            <span>{data?.financials.savings_rate || 0}% Savings Retention</span>
+          <div className="flex items-center gap-1.5 mt-2 text-xs text-stone-500 dark:text-stone-400">
+            <ArrowUpRight className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+            <span className="font-semibold text-emerald-700 dark:text-emerald-400">+{data?.financials.savings_rate || 0}%</span>
+            <span>Savings Retention</span>
           </div>
         </div>
 
