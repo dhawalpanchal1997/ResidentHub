@@ -18,6 +18,7 @@ import {
   Menu,
   Sparkles,
 } from "lucide-react";
+import FestiveBackgroundPattern from "@/components/FestiveBackgroundPattern";
 
 const NAV_ITEMS = [
   { href: "/", label: "Dashboard", icon: Home, badge: null },
@@ -98,7 +99,10 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="min-h-screen flex bg-[#faf7f2]">
+    <div className="min-h-screen flex bg-[#faf7f2] relative">
+      {/* Light Faded Festive & Society Life Background Pattern */}
+      <FestiveBackgroundPattern />
+
       {/* Mobile sidebar overlay */}
       {sidebarOpen && (
         <div className="fixed inset-0 bg-stone-950/70 backdrop-blur-sm z-40 lg:hidden" onClick={() => setSidebarOpen(false)} />
@@ -114,7 +118,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         <div className="p-5 border-b border-stone-800">
           <div className="flex items-center justify-between">
             <Link href="/" className="flex items-center gap-3 group">
-              <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-orange-600 via-amber-500 to-yellow-400 flex items-center justify-center shadow-lg shadow-orange-600/30 group-hover:scale-105 transition-all text-white">
+              <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-orange-600 via-amber-500 to-yellow-400 flex items-center justify-center shadow-lg shadow-orange-600/30 text-white">
                 <span className="text-lg">🪔</span>
               </div>
               <div>

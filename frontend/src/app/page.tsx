@@ -279,7 +279,7 @@ export default function DashboardPage() {
                               className="flex items-center gap-4 p-4 rounded-2xl bg-slate-50/80 hover:bg-white border border-slate-200/80 hover:border-emerald-300 hover:shadow-md transition-all group"
                             >
                               {/* Date Block */}
-                              <div className="w-12 h-12 rounded-xl bg-white border border-slate-200 flex flex-col items-center justify-center shrink-0 shadow-sm group-hover:scale-105 transition-transform">
+                              <div className="w-12 h-12 rounded-xl bg-white border border-slate-200 flex flex-col items-center justify-center shrink-0 shadow-sm">
                                 <span className="text-[9px] font-bold text-rose-600 uppercase">
                                   {evDate.toLocaleDateString("en-IN", { month: "short" })}
                                 </span>

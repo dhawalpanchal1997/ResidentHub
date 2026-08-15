@@ -23,7 +23,7 @@
   --festive-glow: 0 0 30px -5px rgba(245, 158, 11, 0.35);
 
   --card-shadow: 0 2px 4px 0 rgba(120, 53, 15, 0.03), 0 1px 2px -1px rgba(120, 53, 15, 0.03);
-  --card-shadow-hover: 0 16px 32px -8px rgba(120, 53, 15, 0.08), 0 4px 8px -2px rgba(120, 53, 15, 0.04);
+  --card-shadow-hover: 0 14px 28px -6px rgba(120, 53, 15, 0.09), 0 4px 8px -2px rgba(120, 53, 15, 0.04);
 }
 
 * {
@@ -39,6 +39,7 @@ body {
   -moz-osx-font-smoothing: grayscale;
   letter-spacing: -0.01em;
   overflow-x: hidden;
+  position: relative;
 }
 
 /* Monospace font utility for numbers, currency, and reference codes */
@@ -47,9 +48,9 @@ body {
   letter-spacing: -0.03em;
 }
 
-/* Smooth transitions */
+/* Smooth transitions for shadows and colors (no position jumps) */
 button, a, input, select, textarea, .card, .badge {
-  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, color 0.2s ease, opacity 0.2s ease;
 }
 
 /* Custom Festive Scrollbar */
@@ -71,22 +72,28 @@ button, a, input, select, textarea, .card, .badge {
 /* Keyframe Animations for Festive Housing Theme */
 @keyframes float-slow {
   0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-5px); }
+  50% { transform: translateY(-4px); }
 }
 
 @keyframes diya-flicker {
   0%, 100% { opacity: 0.85; transform: scale(1); filter: drop-shadow(0 0 12px rgba(245, 158, 11, 0.6)); }
-  50% { opacity: 1; transform: scale(1.04); filter: drop-shadow(0 0 20px rgba(234, 88, 12, 0.8)); }
+  50% { opacity: 1; transform: scale(1.03); filter: drop-shadow(0 0 18px rgba(234, 88, 12, 0.8)); }
+}
+
+@keyframes gentle-drift {
+  0% { transform: translateY(0px) scale(1); }
+  50% { transform: translateY(-8px) scale(1.005); }
+  100% { transform: translateY(0px) scale(1); }
 }
 
 @keyframes cardEntrance {
   from {
     opacity: 0;
-    transform: translateY(12px) scale(0.99);
+    transform: translateY(8px);
   }
   to {
     opacity: 1;
-    transform: translateY(0) scale(1);
+    transform: translateY(0);
   }
 }
 
@@ -98,29 +105,33 @@ button, a, input, select, textarea, .card, .badge {
   animation: diya-flicker 2.5s ease-in-out infinite;
 }
 
+.animate-gentle-drift {
+  animation: gentle-drift 12s ease-in-out infinite;
+}
+
 .card-entrance {
-  animation: cardEntrance 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: cardEntrance 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 /* Stagger delays */
-.stagger-1 { animation-delay: 50ms; }
-.stagger-2 { animation-delay: 100ms; }
-.stagger-3 { animation-delay: 150ms; }
-.stagger-4 { animation-delay: 200ms; }
+.stagger-1 { animation-delay: 40ms; }
+.stagger-2 { animation-delay: 80ms; }
+.stagger-3 { animation-delay: 120ms; }
+.stagger-4 { animation-delay: 160ms; }
 
-/* Festive Card Styles */
+/* Festive Card Styles (Clean steady hover with shadow only) */
 .card {
   background: #ffffff;
   border-radius: 24px;
   border: 1px solid #eee7dd;
   box-shadow: var(--card-shadow);
-  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease;
+  transition: box-shadow 0.25s ease, border-color 0.2s ease;
 }
 
 .card:hover {
-  transform: translateY(-2px);
   box-shadow: var(--card-shadow-hover);
   border-color: #dfd5c6;
+  /* Steady: no translateY jump on hover */
 }
 
 /* High-Impact Stat Cards with Indian Festive Tones */
@@ -240,7 +251,7 @@ button, a, input, select, textarea, .card, .badge {
   margin-bottom: 0.375rem;
 }
 
-/* Festive Buttons */
+/* Festive Buttons (Shadow on hover, no position movement) */
 .btn-primary {
   display: inline-flex;
   align-items: center;
@@ -252,19 +263,20 @@ button, a, input, select, textarea, .card, .badge {
   font-size: 0.875rem;
   font-weight: 700;
   border-radius: 16px;
-  box-shadow: 0 4px 14px rgba(234, 88, 12, 0.3);
+  box-shadow: 0 4px 14px rgba(234, 88, 12, 0.28);
   border: none;
   cursor: pointer;
+  transition: box-shadow 0.2s ease, opacity 0.2s ease;
 }
 
 .btn-primary:hover:not(:disabled) {
-  opacity: 0.95;
-  transform: translateY(-1.5px);
-  box-shadow: 0 8px 22px rgba(234, 88, 12, 0.4);
+  opacity: 0.96;
+  box-shadow: 0 6px 20px rgba(234, 88, 12, 0.38);
+  /* Steady: no translateY */
 }
 
 .btn-primary:active:not(:disabled) {
-  transform: translateY(0);
+  opacity: 1;
 }
 
 .btn-primary:disabled {
@@ -286,12 +298,14 @@ button, a, input, select, textarea, .card, .badge {
   border-radius: 16px;
   border: 1px solid #e7ded2;
   cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .btn-secondary:hover {
   background: #ebe3d6;
   color: #1c1917;
-  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(120, 53, 15, 0.06);
+  /* Steady: no translateY */
 }
 
 .btn-ghost {
@@ -323,12 +337,13 @@ button, a, input, select, textarea, .card, .badge {
   align-items: center;
   gap: 0.375rem;
   cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .tab-pill-active {
   background-color: #292524;
   color: #ffffff;
-  box-shadow: 0 4px 12px rgba(41, 37, 36, 0.25);
+  box-shadow: 0 3px 10px rgba(41, 37, 36, 0.2);
 }
 
 .tab-pill-inactive {
@@ -375,10 +390,10 @@ button, a, input, select, textarea, .card, .badge {
 @keyframes modalSlideUp {
   from {
     opacity: 0;
-    transform: translateY(20px) scale(0.97);
+    transform: translateY(16px);
   }
   to {
     opacity: 1;
-    transform: translateY(0) scale(1);
+    transform: translateY(0);
   }
 }
