@@ -15,11 +15,13 @@ import {
   updateCommitteeMember,
   deleteCommitteeMember,
   applaudCommitteeMember,
+  fetchIssues,
   EventItem,
   LedgerSummaryData,
   VendorItem,
   NoticeItem,
   CommitteeMemberItem,
+  IssueItem,
 } from "@/lib/api";
 import {
   Calendar,
@@ -35,6 +37,7 @@ import {
   Phone,
   MessageSquare,
   ChevronRight,
+  ChevronLeft,
   Zap,
   CheckCircle2,
   Radio,
@@ -94,6 +97,7 @@ export default function DashboardPage() {
   const [summary, setSummary] = useState<LedgerSummaryData | null>(null);
   const [vendors, setVendors] = useState<VendorItem[]>([]);
   const [notices, setNotices] = useState<NoticeItem[]>([]);
+  const [issues, setIssues] = useState<IssueItem[]>([]);
   const [committee, setCommittee] = useState<CommitteeMemberItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedNoticeCategory, setSelectedNoticeCategory] = useState<string>("All");
@@ -129,7 +133,7 @@ export default function DashboardPage() {
   const [submittingNotice, setSubmittingNotice] = useState(false);
   const [noticeError, setNoticeError] = useState("");
 
-  // Live Society Notice Rotation (useEffect animation)
+  // Live Society Notice Rotation (Notices, Issues Raised, Upcoming Events)
   const [noticeIndex, setNoticeIndex] = useState(0);
 
   const loadAllData = () => {
@@ -140,13 +144,15 @@ export default function DashboardPage() {
       fetchVendors().catch(() => []),
       fetchNotices().catch(() => []),
       fetchCommitteeMembers().catch(() => []),
+      fetchIssues().catch(() => []),
     ])
-      .then(([ev, sum, ven, not, com]) => {
+      .then(([ev, sum, ven, not, com, iss]) => {
         setEvents(ev);
         setSummary(sum);
         setVendors(ven);
         setNotices(not);
         setCommittee(com);
+        setIssues(iss);
       })
       .finally(() => setLoading(false));
   };
@@ -155,14 +161,88 @@ export default function DashboardPage() {
     loadAllData();
   }, [user]);
 
-  // Rotate notices in ticker
+  // Combined Multi-Source Live Broadcast Stream (Notices + Raised Issues + Upcoming Events)
+  const liveBroadcastItems = useMemo(() => {
+    const items: Array<{
+      type: "notice" | "issue" | "event";
+      icon: string;
+      tag: string;
+      tagClass: string;
+      title: string;
+      detail: string;
+      link?: string;
+    }> = [];
+
+    // 1. Official Notices from Notice Board
+    notices.forEach((n) => {
+      const isUrgent = n.priority === "urgent";
+      items.push({
+        type: "notice",
+        icon: "📢",
+        tag: `NOTICE: ${n.category.toUpperCase()}`,
+        tagClass: isUrgent
+          ? "bg-rose-500/20 text-rose-300 border-rose-500/40"
+          : "bg-amber-500/20 text-amber-300 border-amber-500/40",
+        title: n.title,
+        detail: n.content,
+      });
+    });
+
+    // 2. Society Issues Raised & In-Progress
+    issues.forEach((iss) => {
+      const isOpen = iss.status === "open";
+      items.push({
+        type: "issue",
+        icon: "🛠️",
+        tag: `ISSUE #${iss.ticket_number}`,
+        tagClass: isOpen
+          ? "bg-orange-500/20 text-orange-300 border-orange-500/40"
+          : "bg-emerald-500/20 text-emerald-300 border-emerald-500/40",
+        title: `${iss.title} (${iss.location})`,
+        detail: `Status: ${iss.status.toUpperCase()} • Assigned: ${
+          iss.assigned_vendor_name || "Committee Triaging"
+        }`,
+        link: `/issues?search=${iss.ticket_number}`,
+      });
+    });
+
+    // 3. Upcoming Events & Utsavs
+    events
+      .filter((e) => new Date(e.event_date) >= new Date(new Date().setHours(0, 0, 0, 0)))
+      .forEach((ev) => {
+        items.push({
+          type: "event",
+          icon: "🎉",
+          tag: "UPCOMING EVENT",
+          tagClass: "bg-purple-500/20 text-purple-300 border-purple-500/40",
+          title: ev.name,
+          detail: `${formatDate(ev.event_date)} at ${ev.venue} (${ev.rsvps?.length || 0} RSVPs)`,
+          link: "/events",
+        });
+      });
+
+    if (items.length === 0) {
+      items.push({
+        type: "notice",
+        icon: "🪔",
+        tag: "SOCIETY PULSE",
+        tagClass: "bg-emerald-500/20 text-emerald-300 border-emerald-500/40",
+        title: "Runwal Gardens Tower 24",
+        detail: "Welcome to your digital society hub • All systems operating normally",
+      });
+    }
+
+    return items;
+  }, [notices, issues, events]);
+
+  // Rotate notices & live items in ticker
   useEffect(() => {
-    if (notices.length === 0) return;
+    if (liveBroadcastItems.length === 0) return;
     const timer = setInterval(() => {
-      setNoticeIndex((prev) => (prev + 1) % notices.length);
+      setNoticeIndex((prev) => (prev + 1) % liveBroadcastItems.length);
     }, 4500);
     return () => clearInterval(timer);
-  }, [notices]);
+  }, [liveBroadcastItems]);
 
   // ── Committee Applaud Handler ─────────────────────────────────
   const handleApplaud = async (id: string) => {
@@ -470,21 +550,82 @@ export default function DashboardPage() {
         {/* Housing Hero Visual Header */}
         <HousingHeroVisual />
 
-        {/* Live Society Pulse Radar Ticker (Linked to real backend notices) */}
-        <div className="flex items-center gap-3 px-4 py-2.5 bg-slate-900 text-white rounded-2xl border border-slate-800 shadow-sm overflow-hidden text-xs">
-          <div className="flex items-center gap-1.5 shrink-0 text-emerald-400 font-bold font-mono">
-            <Radio className="w-4 h-4 animate-pulse" />
-            <span>LIVE NOTICE:</span>
-          </div>
-          <div className="flex-1 truncate font-medium text-slate-300 transition-all duration-500">
-            {notices.length > 0
-              ? `📢 ${notices[noticeIndex]?.title} — ${notices[noticeIndex]?.content}`
-              : "🎉 Welcome to Tower 24 Runwal Gardens • All systems operating normally"}
-          </div>
-          <div className="shrink-0 flex items-center gap-1 text-[11px] text-amber-400 font-mono hidden sm:flex">
-            <span>T24 CONNECTED</span>
-          </div>
-        </div>
+        {/* Live Society Pulse Radar Ticker (Notices + Issues Raised + Upcoming Events) */}
+        {(() => {
+          const currentItem =
+            liveBroadcastItems[noticeIndex % (liveBroadcastItems.length || 1)] || liveBroadcastItems[0];
+
+          return (
+            <div className="flex items-center gap-3 px-4 py-2.5 bg-gradient-to-r from-stone-950 via-stone-900 to-amber-950 text-white rounded-2xl border border-stone-800 shadow-md overflow-hidden text-xs">
+              <div className="flex items-center gap-1.5 shrink-0 text-emerald-400 font-bold font-mono">
+                <Radio className="w-4 h-4 animate-pulse text-emerald-400" />
+                <span className="hidden sm:inline">LIVE PULSE:</span>
+              </div>
+
+              {/* Dynamic Tag Pill */}
+              <div className="shrink-0">
+                <span
+                  className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-mono font-extrabold border ${
+                    currentItem?.tagClass || "bg-amber-500/20 text-amber-300 border-amber-500/40"
+                  }`}
+                >
+                  <span>{currentItem?.icon}</span>
+                  <span className="truncate max-w-[130px] sm:max-w-none">{currentItem?.tag}</span>
+                </span>
+              </div>
+
+              {/* Rotating Message & Detail */}
+              <div className="flex-1 truncate text-stone-200 transition-all duration-500 font-medium">
+                {currentItem?.link ? (
+                  <Link
+                    href={currentItem.link}
+                    className="hover:text-amber-400 transition-colors flex items-center gap-1.5 truncate group"
+                  >
+                    <span className="font-bold text-white group-hover:text-amber-300">
+                      {currentItem.title}
+                    </span>
+                    <span className="text-stone-400 truncate">— {currentItem.detail}</span>
+                    <ArrowRight className="w-3 h-3 text-amber-400 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
+                  </Link>
+                ) : (
+                  <div className="truncate">
+                    <span className="font-bold text-white">{currentItem?.title}</span>{" "}
+                    <span className="text-stone-400">— {currentItem?.detail}</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Manual Nav Controls & Item Counter */}
+              <div className="shrink-0 flex items-center gap-1.5 font-mono text-[10px] text-stone-400">
+                <button
+                  type="button"
+                  onClick={() =>
+                    setNoticeIndex(
+                      (prev) => (prev - 1 + liveBroadcastItems.length) % liveBroadcastItems.length
+                    )
+                  }
+                  className="p-1 rounded hover:bg-white/10 text-stone-400 hover:text-white transition-colors"
+                  title="Previous Update"
+                >
+                  <ChevronLeft className="w-3 h-3" />
+                </button>
+                <span className="hidden sm:inline">
+                  {(noticeIndex % liveBroadcastItems.length) + 1}/{liveBroadcastItems.length}
+                </span>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setNoticeIndex((prev) => (prev + 1) % liveBroadcastItems.length)
+                  }
+                  className="p-1 rounded hover:bg-white/10 text-stone-400 hover:text-white transition-colors"
+                  title="Next Update"
+                >
+                  <ChevronRight className="w-3 h-3" />
+                </button>
+              </div>
+            </div>
+          );
+        })()}
 
         {loading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
