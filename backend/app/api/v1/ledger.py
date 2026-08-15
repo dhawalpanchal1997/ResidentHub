@@ -106,12 +106,14 @@ async def get_ledger_summary(db: AsyncSession = Depends(get_db)):
         category_breakdown=category_breakdown
     )
 
+from app.core.security import get_current_user, get_current_admin, get_optional_current_user
+
 # ── Statement Document History & Audit Endpoints ───────────────
 
 @router.get("/statements", response_model=StatementDocumentListResponse)
 async def list_statements(
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: Optional[User] = Depends(get_optional_current_user)
 ):
     """Lists historical uploaded bank statement documents."""
     result = await db.execute(
@@ -146,7 +148,7 @@ async def list_statements(
 async def get_statement_details(
     statement_id: str,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: Optional[User] = Depends(get_optional_current_user)
 ):
     """Retrieves full details of an uploaded statement document, including raw content."""
     result = await db.execute(

@@ -5,6 +5,9 @@ from app.core.config import settings
 from app.core.database import init_db
 from app.api.v1.api_router import api_router
 
+# Import all SQLAlchemy models to register them in Base.metadata
+from app.models import society, user, event, statement, ledger, vendor, notice, committee, issue
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Initialize DB tables on startup

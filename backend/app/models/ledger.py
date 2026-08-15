@@ -3,6 +3,7 @@ from datetime import datetime, date
 from sqlalchemy import Column, String, Text, Numeric, Date, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
 from app.core.database import Base
+from app.models.statement import StatementDocument
 
 class LedgerTransaction(Base):
     __tablename__ = "ledger_transactions"
