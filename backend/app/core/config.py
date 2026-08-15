@@ -4,7 +4,7 @@ from pydantic_settings import BaseSettings
 from pydantic import Field
 
 class Settings(BaseSettings):
-    model_config = {"env_file": ".env", "extra": "allow"}
+    model_config = {"env_file": [".env", "../.env", "backend/.env"], "extra": "allow"}
     
     PROJECT_NAME: str = "ResidentHub"
     VERSION: str = "1.0.0"
