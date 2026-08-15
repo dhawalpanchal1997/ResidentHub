@@ -207,12 +207,13 @@ RULES FOR DEDUPLICATION:
 """
 
     try:
+        import asyncio
         from langchain_core.messages import SystemMessage, HumanMessage
         messages = [
             SystemMessage(content="You are a deterministic housing society duplicate issue verification engine. Respond only with JSON."),
             HumanMessage(content=prompt)
         ]
-        response = await llm.ainvoke(messages)
+        response = await asyncio.wait_for(llm.ainvoke(messages), timeout=4.0)
         content = response.content.strip()
 
         # Clean markdown wrappers if any
@@ -226,5 +227,5 @@ RULES FOR DEDUPLICATION:
         parsed = json.loads(content.strip())
         return parsed
     except Exception as e:
-        logger.warning(f"LLM duplicate check encountered error ({e}). Using deterministic fallback.")
+        logger.info(f"LLM duplicate check fallback used ({e}). Using deterministic semantic matcher.")
         return deterministic_duplicate_check(title, description, category, location, flat_number, active_issues)
