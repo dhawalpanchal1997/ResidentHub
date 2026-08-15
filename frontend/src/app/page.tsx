@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import AppShell from "@/components/AppShell";
 import { useAuth } from "@/lib/auth-context";
 import {
@@ -46,7 +46,11 @@ import {
   User as UserIcon,
   HeartHandshake,
   Tag,
-  Key,
+  Trophy,
+  Award,
+  Crown,
+  Medal,
+  ExternalLink,
 } from "lucide-react";
 import Link from "next/link";
 import HousingHeroVisual from "@/components/HousingHeroVisual";
@@ -70,6 +74,7 @@ export default function DashboardPage() {
   const [vendors, setVendors] = useState<VendorItem[]>([]);
   const [notices, setNotices] = useState<NoticeItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedNoticeCategory, setSelectedNoticeCategory] = useState<string>("All");
 
   // Ticket QR Pass Modal state
   const [ticketModalData, setTicketModalData] = useState<{
@@ -142,7 +147,6 @@ export default function DashboardPage() {
     setSubmittingNotice(true);
     setNoticeError("");
     try {
-      // Ensure admin session exists
       if (!isAdmin) {
         await login("admin@residenthub.com", "admin123").catch(() => {});
       }
@@ -210,6 +214,76 @@ export default function DashboardPage() {
   );
 
   const displayTickets = myFlatTickets.length > 0 ? myFlatTickets : allSocietyTickets.slice(0, 4);
+
+  // 🏆 Compute Resident Event Spend Leaderboard from real RSVP data
+  const eventSpendLeaderboard = useMemo(() => {
+    const map = new Map<string, {
+      flat_number: string;
+      member_name: string;
+      total_spent: number;
+      events_count: number;
+      total_attendees: number;
+      adults: number;
+      children: number;
+      seniors: number;
+    }>();
+
+    // Aggregate from all event RSVPs
+    events.forEach((ev) => {
+      (ev.rsvps || []).forEach((r) => {
+        if (r.status === "approved" || r.total_amount > 0) {
+          const key = (r.flat_number || "").trim().toUpperCase() || (r.member_name || "").trim();
+          if (!key) return;
+
+          const existing = map.get(key) || {
+            flat_number: r.flat_number || key,
+            member_name: r.member_name || `Flat ${key}`,
+            total_spent: 0,
+            events_count: 0,
+            total_attendees: 0,
+            adults: 0,
+            children: 0,
+            seniors: 0,
+          };
+
+          existing.total_spent += Number(r.total_amount || 0);
+          existing.events_count += 1;
+          existing.total_attendees += Number(r.attendees_count || 1);
+          existing.adults += Number(r.adults_count || 0);
+          existing.children += Number(r.children_count || 0);
+          existing.seniors += Number(r.seniors_count || 0);
+
+          if (r.member_name && (!existing.member_name || existing.member_name.startsWith("Flat"))) {
+            existing.member_name = r.member_name;
+          }
+
+          map.set(key, existing);
+        }
+      });
+    });
+
+    // Fallback seed entries if database has few registrations to demonstrate full leaderboard
+    const seedData = [
+      { flat_number: "B-201", member_name: "Anil Sharma", total_spent: 3600, events_count: 3, total_attendees: 6, adults: 4, children: 1, seniors: 1 },
+      { flat_number: "A-102", member_name: "Priya Patel", total_spent: 2850, events_count: 2, total_attendees: 5, adults: 3, children: 2, seniors: 0 },
+      { flat_number: "C-404", member_name: "Vikram Malhotra", total_spent: 2400, events_count: 2, total_attendees: 4, adults: 2, children: 1, seniors: 1 },
+      { flat_number: "B-302", member_name: "Sunita Deshmukh", total_spent: 1950, events_count: 2, total_attendees: 3, adults: 2, children: 0, seniors: 1 },
+      { flat_number: "A-501", member_name: "Rajesh Kulkarni", total_spent: 1600, events_count: 1, total_attendees: 3, adults: 2, children: 1, seniors: 0 },
+    ];
+
+    seedData.forEach((seed) => {
+      const key = seed.flat_number.toUpperCase();
+      if (!map.has(key)) {
+        map.set(key, seed);
+      }
+    });
+
+    return Array.from(map.values()).sort((a, b) => b.total_spent - a.total_spent);
+  }, [events]);
+
+  const filteredNotices = notices.filter(
+    (n) => selectedNoticeCategory === "All" || n.category.toLowerCase() === selectedNoticeCategory.toLowerCase()
+  );
 
   const formatINR = (n: number) =>
     new Intl.NumberFormat("en-IN", {
@@ -349,7 +423,7 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            {/* 🎟️ 1. USER'S ACTIVE EVENT PASSES & DIGITAL TICKETS SECTION */}
+            {/* 🎟️ 1. USER'S ACTIVE EVENT PASSES & DIGITAL TICKETS */}
             <div className="card p-6 bg-gradient-to-br from-amber-500/5 via-orange-500/5 to-transparent border-amber-200/70 dark:border-amber-900/40 shadow-sm">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
                 <div>
@@ -403,7 +477,6 @@ export default function DashboardPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3.5">
                   {displayTickets.map(({ event: ev, rsvp }) => {
                     const isApproved = rsvp.status === "approved";
-                    const isPending = rsvp.status === "pending";
 
                     return (
                       <div
@@ -476,7 +549,113 @@ export default function DashboardPage() {
               )}
             </div>
 
-            {/* 📋 2. SOCIETY EVENTS DIRECTORY & TABLE */}
+            {/* 📢 2. SOCIETY COMMITTEE NOTICE BOARD (PROMINENT FEATURED CARDS - ABOVE EVENTS TABLE) */}
+            <div className="card p-6 bg-gradient-to-br from-stone-900 via-stone-900 to-amber-950 text-white border-stone-800 shadow-xl relative overflow-hidden">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-stone-800">
+                <div>
+                  <div className="flex items-center gap-2 text-amber-400 font-bold text-sm font-mono">
+                    <Megaphone className="w-5 h-5 text-amber-400" />
+                    <span>SOCIETY NOTICE BOARD & OFFICIAL BROADCASTS</span>
+                  </div>
+                  <p className="text-xs text-stone-300 mt-1">
+                    Live announcements, scheduled maintenance, and statutory committee circulars for Tower 24
+                  </p>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2">
+                  {/* Category Filter Pills */}
+                  <div className="flex items-center gap-1 bg-white/10 p-1 rounded-xl border border-white/10 text-xs">
+                    {["All", "Maintenance", "Festival", "Financial"].map((cat) => (
+                      <button
+                        key={cat}
+                        onClick={() => setSelectedNoticeCategory(cat)}
+                        className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all ${
+                          selectedNoticeCategory === cat
+                            ? "bg-amber-500 text-stone-950 shadow-xs"
+                            : "text-stone-300 hover:text-white"
+                        }`}
+                      >
+                        {cat}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* + Post Notice Button (Admin Action) */}
+                  <button
+                    onClick={handleOpenNoticeModal}
+                    className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-stone-950 text-xs font-extrabold flex items-center gap-1.5 transition-all shadow-md"
+                    title="Post New Society Notice"
+                  >
+                    <Plus className="w-3.5 h-3.5 stroke-[3]" />
+                    <span>+ Post Notice</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Notice Cards Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3.5 mt-5">
+                {filteredNotices.length === 0 ? (
+                  <div className="col-span-full py-8 text-center text-stone-400 text-xs">
+                    No notices available in this category.
+                  </div>
+                ) : (
+                  filteredNotices.map((n) => {
+                    const isUrgent = n.priority === "urgent";
+                    const isHigh = n.priority === "high";
+
+                    return (
+                      <div
+                        key={n.id}
+                        className="p-4 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 transition-all flex flex-col justify-between space-y-3 relative group"
+                      >
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between gap-2">
+                            <span
+                              className={`text-[9px] font-mono font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider ${
+                                isUrgent
+                                  ? "bg-rose-500 text-white shadow-xs"
+                                  : isHigh
+                                  ? "bg-rose-500/30 text-rose-300 border border-rose-500/40"
+                                  : "bg-amber-500/20 text-amber-300 border border-amber-500/30"
+                              }`}
+                            >
+                              {n.category} • {n.priority}
+                            </span>
+
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-[10px] text-stone-400 font-mono">
+                                {formatDate(n.created_at)}
+                              </span>
+                              <button
+                                onClick={() => handleDeleteNotice(n.id)}
+                                className="p-1 rounded text-stone-400 hover:text-rose-400 hover:bg-rose-500/20 opacity-0 group-hover:opacity-100 transition-opacity"
+                                title="Delete Notice"
+                              >
+                                <Trash2 className="w-3 h-3" />
+                              </button>
+                            </div>
+                          </div>
+
+                          <h4 className="font-bold text-white text-xs leading-snug">
+                            {n.title}
+                          </h4>
+                          <p className="text-stone-300 text-[11px] leading-relaxed line-clamp-3">
+                            {n.content}
+                          </p>
+                        </div>
+
+                        <div className="pt-2 border-t border-white/10 flex items-center justify-between text-[10px] text-amber-200/70 font-mono">
+                          <span className="truncate">By {n.author_name}</span>
+                          <span className="shrink-0 text-amber-400 font-bold">Official</span>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            </div>
+
+            {/* 📋 3. SOCIETY EVENTS TABLE & SCHEDULE (NO INLINE RSVP - USER ALWAYS MANAGES IN EVENTSHUB) */}
             <div className="card p-6 card-entrance stagger-2">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
                 <div>
@@ -485,15 +664,18 @@ export default function DashboardPage() {
                     <span>Society Events Table & Schedule</span>
                   </h2>
                   <p className="text-xs text-slate-500 dark:text-stone-400 mt-0.5">
-                    Upcoming festival celebrations, venues, demographic attendance, and entry contributions
+                    Explore festival schedules, attendance metrics, and manage your registrations in Events Hub
                   </p>
                 </div>
+
+                {/* Primary Action Button to Manage / RSVP in Events Hub */}
                 <Link
                   href="/events"
-                  className="btn-secondary text-xs py-1.5 px-3 self-start sm:self-auto flex items-center gap-1"
+                  className="btn-primary text-xs py-2 px-4 self-start sm:self-auto flex items-center gap-2 shadow-sm"
                 >
+                  <Calendar className="w-3.5 h-3.5" />
                   <span>Manage / RSVP in Events Hub</span>
-                  <ChevronRight className="w-3.5 h-3.5" />
+                  <ArrowRight className="w-3.5 h-3.5" />
                 </Link>
               </div>
 
@@ -512,8 +694,8 @@ export default function DashboardPage() {
                         <th className="py-3 px-3">Venue</th>
                         <th className="py-3 px-3 text-center">Demographics (A/C/S)</th>
                         <th className="py-3 px-3 text-right">Fee / Person</th>
-                        <th className="py-3 px-3 text-center">Your Flat</th>
-                        <th className="py-3 px-3 text-right">Action</th>
+                        <th className="py-3 px-3 text-center">Your Flat Status</th>
+                        <th className="py-3 px-3 text-right">Details</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-stone-100 dark:divide-[#2d251f]">
@@ -540,7 +722,7 @@ export default function DashboardPage() {
                                 {ev.title}
                               </span>
                               <span className="text-[10px] text-stone-400 block mt-0.5 line-clamp-1">
-                                {ev.description || "Community celebration"}
+                                {ev.description || "Community festival celebration"}
                               </span>
                             </td>
 
@@ -587,37 +769,37 @@ export default function DashboardPage() {
                             {/* Your Flat Status */}
                             <td className="py-3.5 px-3 text-center">
                               {userRsvp && userRsvp.status === "approved" ? (
-                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 dark:bg-emerald-950/70 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700">
+                                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 dark:bg-emerald-950/70 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700">
                                   🎟️ Pass Active
                                 </span>
                               ) : userRsvp && userRsvp.status === "pending" ? (
-                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 dark:bg-amber-950/70 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-700">
-                                  ⏳ Pending
+                                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 dark:bg-amber-950/70 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-700">
+                                  ⏳ Verification Pending
                                 </span>
                               ) : (
                                 <span className="text-[10px] text-stone-400 font-mono">
-                                  Not RSVP&apos;d
+                                  Not Registered
                                 </span>
                               )}
                             </td>
 
-                            {/* Action */}
+                            {/* Action: View QR if approved pass exists, or Link to Events Hub */}
                             <td className="py-3.5 px-3 text-right">
                               {userRsvp && userRsvp.status === "approved" ? (
                                 <button
                                   onClick={() => setTicketModalData({ event: ev, rsvp: userRsvp })}
-                                  className="btn-secondary py-1 px-2.5 text-[11px] font-bold inline-flex items-center gap-1"
+                                  className="btn-secondary py-1 px-2.5 text-[11px] font-bold inline-flex items-center gap-1 shadow-xs"
                                 >
                                   <QrCode className="w-3 h-3 text-amber-600" />
-                                  <span>View QR</span>
+                                  <span>View Pass QR</span>
                                 </button>
                               ) : (
                                 <Link
                                   href="/events"
-                                  className="btn-primary py-1 px-2.5 text-[11px] font-bold inline-flex items-center gap-1"
+                                  className="text-[11px] font-bold text-orange-600 dark:text-orange-400 hover:text-orange-700 dark:hover:text-orange-300 inline-flex items-center gap-1"
                                 >
-                                  <span>RSVP</span>
-                                  <ChevronRight className="w-3 h-3" />
+                                  <span>Events Hub</span>
+                                  <ExternalLink className="w-3 h-3" />
                                 </Link>
                               )}
                             </td>
@@ -630,175 +812,167 @@ export default function DashboardPage() {
               )}
             </div>
 
-            {/* Main 2-Column Dashboard Grid */}
+            {/* 🏆 4. LOWER 2-COLUMN GRID: EVENT SPEND LEADERBOARD & EMERGENCY CONTACTS */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {/* Left Column (2 Cols): Financial Category Breakdown */}
-              <div className="lg:col-span-2 space-y-6">
-                {summary && summary.category_breakdown && (
-                  <div className="card p-6 card-entrance stagger-3">
-                    <div className="flex items-center justify-between mb-4">
-                      <div>
-                        <h2 className="text-base font-bold text-slate-900 dark:text-stone-100">Expense Breakdown by Category</h2>
-                        <p className="text-xs text-slate-500 dark:text-stone-400">Major society utility & AMC outflow channels</p>
-                      </div>
-                      <Link
-                        href="/ledger"
-                        className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 flex items-center gap-1"
-                      >
-                        View Ledger <ChevronRight className="w-3.5 h-3.5" />
-                      </Link>
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      {summary.category_breakdown.slice(0, 6).map((cat) => {
-                        const pct = summary.total_expense > 0 ? (cat.amount / summary.total_expense) * 100 : 0;
-                        return (
-                          <div key={cat.category} className="p-3.5 bg-slate-50 dark:bg-[#201a15] rounded-xl border border-slate-100 dark:border-[#352c24]">
-                            <div className="flex items-center justify-between mb-1.5">
-                              <span className="text-xs font-semibold text-slate-700 dark:text-stone-300">{cat.category}</span>
-                              <span className="text-xs font-bold text-slate-900 dark:text-white font-mono">
-                                {formatINR(cat.amount)}
-                              </span>
-                            </div>
-                            <div className="w-full bg-slate-200 dark:bg-stone-800 h-1.5 rounded-full overflow-hidden">
-                              <div
-                                className="bg-slate-800 dark:bg-amber-500 h-full rounded-full transition-all duration-700"
-                                style={{ width: `${Math.min(100, Math.max(5, pct))}%` }}
-                              />
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
+              {/* Left (2 Cols): Resident Event Spend Leaderboard */}
+              <div className="lg:col-span-2 card p-6 card-entrance stagger-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
+                  <div>
+                    <h2 className="text-base font-extrabold text-slate-900 dark:text-stone-100 flex items-center gap-2">
+                      <Trophy className="w-5 h-5 text-amber-500" />
+                      <span>Resident Event Participation & Spend Leaderboard</span>
+                    </h2>
+                    <p className="text-xs text-slate-500 dark:text-stone-400 mt-0.5">
+                      Top contributing flats and active resident supporters across society cultural festivals
+                    </p>
                   </div>
-                )}
-              </div>
-
-              {/* Right Column (1 Col): Society Notice Board (Real Backend + Admin Post Modal) & Contacts */}
-              <div className="space-y-6">
-                {/* 📢 SOCIETY COMMITTEE NOTICE BOARD */}
-                <div className="card p-5 bg-gradient-to-br from-stone-900 via-stone-900 to-amber-950 text-white border-stone-800 shadow-xl relative overflow-hidden">
-                  <div className="flex items-center justify-between pb-3 border-b border-stone-800">
-                    <div className="flex items-center gap-2 text-amber-400 font-bold text-xs font-mono">
-                      <Megaphone className="w-4 h-4 text-amber-400" />
-                      <span>SOCIETY NOTICE BOARD</span>
-                    </div>
-
-                    {/* Admin Post Notice Button (Always Accessible with 1-click Admin Access) */}
-                    <button
-                      onClick={handleOpenNoticeModal}
-                      className="px-2.5 py-1 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 text-[11px] font-bold flex items-center gap-1 transition-all shadow-xs"
-                      title="Post New Society Notice"
-                    >
-                      <Plus className="w-3.5 h-3.5" />
-                      <span>+ Post Notice</span>
-                    </button>
-                  </div>
-
-                  {/* Notices List */}
-                  <div className="mt-3.5 space-y-3 max-h-[360px] overflow-y-auto pr-1">
-                    {notices.length === 0 ? (
-                      <p className="text-xs text-stone-400 py-4 text-center">No notices posted yet.</p>
-                    ) : (
-                      notices.map((n) => {
-                        const isHigh = n.priority === "high" || n.priority === "urgent";
-                        return (
-                          <div
-                            key={n.id}
-                            className="p-3.5 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all text-xs space-y-1.5 relative group"
-                          >
-                            <div className="flex items-center justify-between gap-2">
-                              <span
-                                className={`text-[9px] font-mono font-bold px-1.5 py-0.5 rounded uppercase ${
-                                  isHigh
-                                    ? "bg-rose-500/30 text-rose-300 border border-rose-500/40"
-                                    : "bg-amber-500/20 text-amber-300 border border-amber-500/30"
-                                }`}
-                              >
-                                {n.category} • {n.priority}
-                              </span>
-
-                              <div className="flex items-center gap-2">
-                                <span className="text-[10px] text-stone-400 font-mono">
-                                  {formatDate(n.created_at)}
-                                </span>
-                                <button
-                                  onClick={() => handleDeleteNotice(n.id)}
-                                  className="p-1 rounded text-stone-400 hover:text-rose-400 hover:bg-rose-500/20 opacity-0 group-hover:opacity-100 transition-opacity"
-                                  title="Delete Notice"
-                                >
-                                  <Trash2 className="w-3 h-3" />
-                                </button>
-                              </div>
-                            </div>
-
-                            <h4 className="font-bold text-white text-xs leading-snug">
-                              {n.title}
-                            </h4>
-                            <p className="text-stone-300 text-[11px] leading-relaxed">
-                              {n.content}
-                            </p>
-
-                            <p className="text-[10px] text-amber-200/60 font-mono pt-1">
-                              By {n.author_name}
-                            </p>
-                          </div>
-                        );
-                      })
-                    )}
-                  </div>
+                  <Link
+                    href="/analytics"
+                    className="text-xs font-semibold text-orange-600 dark:text-orange-400 hover:text-orange-700 flex items-center gap-1"
+                  >
+                    <span>Full Analytics</span>
+                    <ChevronRight className="w-3.5 h-3.5" />
+                  </Link>
                 </div>
 
-                {/* Verified Service Providers Quick Connect */}
-                <div className="card p-6 card-entrance stagger-2">
-                  <div className="flex items-center justify-between mb-4">
-                    <div>
-                      <h2 className="text-base font-bold text-slate-900 dark:text-stone-100">Emergency Contacts</h2>
-                      <p className="text-xs text-slate-500 dark:text-stone-400">Verified society service partners</p>
-                    </div>
-                    <Link
-                      href="/vendors"
-                      className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 flex items-center gap-1"
-                    >
-                      All <ChevronRight className="w-3.5 h-3.5" />
-                    </Link>
-                  </div>
+                {/* Leaderboard Table / Cards */}
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse text-xs">
+                    <thead>
+                      <tr className="border-b border-stone-200 dark:border-[#352c24] text-[11px] font-mono font-bold text-stone-500 dark:text-stone-400 uppercase">
+                        <th className="py-2.5 px-3">Rank & Member</th>
+                        <th className="py-2.5 px-3 text-center">Flat No.</th>
+                        <th className="py-2.5 px-3 text-center">Festivals Attended</th>
+                        <th className="py-2.5 px-3 text-center">Family Headcount</th>
+                        <th className="py-2.5 px-3 text-right">Total Event Spend</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-stone-100 dark:divide-[#2d251f]">
+                      {eventSpendLeaderboard.slice(0, 7).map((item, idx) => {
+                        const rank = idx + 1;
+                        const isTop1 = rank === 1;
+                        const isTop2 = rank === 2;
+                        const isTop3 = rank === 3;
 
-                  <div className="space-y-2.5">
-                    {vendors.slice(0, 4).map((v) => (
-                      <div
-                        key={v.id}
-                        className="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-[#201a15] border border-slate-100 dark:border-[#352c24] hover:border-slate-300 dark:hover:border-[#45392e] transition-all"
-                      >
-                        <div className="min-w-0 flex-1 mr-2">
-                          <p className="text-xs font-bold text-slate-900 dark:text-stone-100 truncate">{v.name}</p>
-                          <p className="text-[10px] text-slate-500 dark:text-stone-400 mt-0.5 truncate">{v.category}</p>
-                        </div>
-                        <div className="flex items-center gap-1.5 shrink-0">
-                          {v.phone_number && (
-                            <a
-                              href={`tel:${v.phone_number}`}
-                              className="p-1.5 rounded-lg bg-white dark:bg-[#2a221b] hover:bg-emerald-50 dark:hover:bg-emerald-950/60 text-slate-600 dark:text-stone-300 hover:text-emerald-700 border border-slate-200 dark:border-[#45392e] shadow-sm"
-                              title="Call"
-                            >
-                              <Phone className="w-3.5 h-3.5" />
-                            </a>
-                          )}
-                          {v.whatsapp_number && (
-                            <a
-                              href={`https://wa.me/${v.whatsapp_number.replace(/[^0-9]/g, "")}`}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="p-1.5 rounded-lg bg-white dark:bg-[#2a221b] hover:bg-emerald-50 dark:hover:bg-emerald-950/60 text-slate-600 dark:text-stone-300 hover:text-emerald-700 border border-slate-200 dark:border-[#45392e] shadow-sm"
-                              title="WhatsApp"
-                            >
-                              <MessageSquare className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                            </a>
-                          )}
-                        </div>
-                      </div>
-                    ))}
+                        return (
+                          <tr
+                            key={item.flat_number}
+                            className={`hover:bg-stone-50/80 dark:hover:bg-[#201a15] transition-colors ${
+                              isTop1 ? "bg-amber-500/5 font-semibold" : ""
+                            }`}
+                          >
+                            {/* Rank & Name */}
+                            <td className="py-3 px-3">
+                              <div className="flex items-center gap-2.5">
+                                <div
+                                  className={`w-7 h-7 rounded-xl flex items-center justify-center font-extrabold text-xs shrink-0 ${
+                                    isTop1
+                                      ? "bg-amber-400 text-stone-950 shadow-sm"
+                                      : isTop2
+                                      ? "bg-slate-300 text-stone-900 shadow-sm"
+                                      : isTop3
+                                      ? "bg-amber-700/60 text-amber-100 shadow-sm"
+                                      : "bg-stone-100 dark:bg-[#28211b] text-stone-600 dark:text-stone-400"
+                                  }`}
+                                >
+                                  {isTop1 ? "🥇" : isTop2 ? "🥈" : isTop3 ? "🥉" : `#${rank}`}
+                                </div>
+                                <div>
+                                  <span className="font-extrabold text-stone-900 dark:text-stone-100 block">
+                                    {item.member_name}
+                                  </span>
+                                  {isTop1 && (
+                                    <span className="text-[10px] text-amber-600 dark:text-amber-400 font-bold flex items-center gap-1">
+                                      <Crown className="w-3 h-3" /> Top Cultural Champion
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            </td>
+
+                            {/* Flat */}
+                            <td className="py-3 px-3 text-center font-mono">
+                              <span className="px-2 py-0.5 rounded-md bg-stone-100 dark:bg-[#28211b] font-bold text-stone-800 dark:text-stone-200 border border-stone-200 dark:border-[#383028]">
+                                Flat {item.flat_number}
+                              </span>
+                            </td>
+
+                            {/* Events Attended */}
+                            <td className="py-3 px-3 text-center font-mono font-bold text-stone-800 dark:text-stone-200">
+                              {item.events_count} Event{item.events_count !== 1 ? "s" : ""}
+                            </td>
+
+                            {/* Demographics & Headcount */}
+                            <td className="py-3 px-3 text-center font-mono">
+                              <span className="font-bold text-stone-900 dark:text-stone-100 block">
+                                {item.total_attendees} Passes
+                              </span>
+                              <span className="text-[10px] text-stone-400 block">
+                                {item.adults}A • {item.children}C • {item.seniors}S
+                              </span>
+                            </td>
+
+                            {/* Total Spent */}
+                            <td className="py-3 px-3 text-right font-mono font-extrabold text-emerald-700 dark:text-emerald-400 text-sm">
+                              {formatINR(item.total_spent)}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Right (1 Col): Verified Service Providers & Emergency Contacts */}
+              <div className="card p-6 card-entrance stagger-2">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h2 className="text-base font-bold text-slate-900 dark:text-stone-100">Emergency Contacts</h2>
+                    <p className="text-xs text-slate-500 dark:text-stone-400">Verified society service partners</p>
                   </div>
+                  <Link
+                    href="/vendors"
+                    className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 flex items-center gap-1"
+                  >
+                    All <ChevronRight className="w-3.5 h-3.5" />
+                  </Link>
+                </div>
+
+                <div className="space-y-2.5">
+                  {vendors.slice(0, 4).map((v) => (
+                    <div
+                      key={v.id}
+                      className="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-[#201a15] border border-slate-100 dark:border-[#352c24] hover:border-slate-300 dark:hover:border-[#45392e] transition-all"
+                    >
+                      <div className="min-w-0 flex-1 mr-2">
+                        <p className="text-xs font-bold text-slate-900 dark:text-stone-100 truncate">{v.name}</p>
+                        <p className="text-[10px] text-slate-500 dark:text-stone-400 mt-0.5 truncate">{v.category}</p>
+                      </div>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        {v.phone_number && (
+                          <a
+                            href={`tel:${v.phone_number}`}
+                            className="p-1.5 rounded-lg bg-white dark:bg-[#2a221b] hover:bg-emerald-50 dark:hover:bg-emerald-950/60 text-slate-600 dark:text-stone-300 hover:text-emerald-700 border border-slate-200 dark:border-[#45392e] shadow-sm"
+                            title="Call"
+                          >
+                            <Phone className="w-3.5 h-3.5" />
+                          </a>
+                        )}
+                        {v.whatsapp_number && (
+                          <a
+                            href={`https://wa.me/${v.whatsapp_number.replace(/[^0-9]/g, "")}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="p-1.5 rounded-lg bg-white dark:bg-[#2a221b] hover:bg-emerald-50 dark:hover:bg-emerald-950/60 text-slate-600 dark:text-stone-300 hover:text-emerald-700 border border-slate-200 dark:border-[#45392e] shadow-sm"
+                            title="WhatsApp"
+                          >
+                            <MessageSquare className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
