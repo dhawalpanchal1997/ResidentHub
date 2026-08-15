@@ -376,46 +376,80 @@ export default function LedgerPage() {
           </div>
         </div>
 
-        {/* KPI Financial Overview Cards */}
+        {/* 4 High-Impact KPI Financial Metric Cards (Consistent with Issues & Helpdesk) */}
         {summary && (
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="card p-5 bg-gradient-to-br from-emerald-50/80 via-white to-white border-emerald-200/70 shadow-sm relative overflow-hidden">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* 1. Society Reserve / Net Balance */}
+            <div className="stat-card-balance p-5 rounded-2xl flex flex-col justify-between card-entrance stagger-1">
               <div className="flex items-center justify-between">
-                <span className="text-[11px] font-extrabold uppercase tracking-wider text-emerald-800">Total Income</span>
-                <div className="w-8 h-8 rounded-xl bg-emerald-100 flex items-center justify-center text-emerald-600">
-                  <TrendingUp className="w-4 h-4" />
+                <span className="text-xs font-semibold text-slate-300 font-mono">SOCIETY RESERVE</span>
+                <div className="w-8 h-8 rounded-xl bg-white/10 flex items-center justify-center">
+                  <Wallet className="w-4 h-4 text-emerald-400" />
                 </div>
               </div>
-              <p className="text-2xl font-black text-emerald-950 mt-2 font-mono">
-                <AnimatedCounter value={summary.total_income} formatter={(v) => formatINR(v)} />
-              </p>
-              <p className="text-[11px] text-emerald-600 mt-1 font-medium">Maintenance & Event Contributions</p>
+              <div className="mt-4">
+                <p className="text-2xl font-extrabold tracking-tight font-mono text-emerald-400">
+                  <AnimatedCounter value={summary.current_balance} formatter={(v) => formatINR(v)} />
+                </p>
+                <p className="text-[11px] text-emerald-300/90 font-medium flex items-center gap-1 mt-1">
+                  <ShieldCheck className="w-3 h-3 text-emerald-400" />
+                  Net Liquid Reserve Fund
+                </p>
+              </div>
             </div>
 
-            <div className="card p-5 bg-gradient-to-br from-rose-50/80 via-white to-white border-rose-200/70 shadow-sm relative overflow-hidden">
+            {/* 2. Total Inflow / Income */}
+            <div className="stat-card-income p-5 rounded-2xl flex flex-col justify-between card-entrance stagger-2">
               <div className="flex items-center justify-between">
-                <span className="text-[11px] font-extrabold uppercase tracking-wider text-rose-800">Total Expenses</span>
-                <div className="w-8 h-8 rounded-xl bg-rose-100 flex items-center justify-center text-rose-600">
-                  <TrendingDown className="w-4 h-4" />
+                <span className="text-xs font-bold text-amber-800 dark:text-amber-300 font-mono">TOTAL INFLOW</span>
+                <div className="w-8 h-8 rounded-xl bg-amber-100 dark:bg-amber-950 flex items-center justify-center">
+                  <TrendingUp className="w-4 h-4 text-amber-700 dark:text-amber-300" />
                 </div>
               </div>
-              <p className="text-2xl font-black text-rose-950 mt-2 font-mono">
-                <AnimatedCounter value={summary.total_expense} formatter={(v) => formatINR(v)} />
-              </p>
-              <p className="text-[11px] text-rose-600 mt-1 font-medium">Utilities, AMC, Vendor & Event Costs</p>
+              <div className="mt-4">
+                <p className="text-2xl font-extrabold text-amber-950 dark:text-amber-100 font-mono">
+                  <AnimatedCounter value={summary.total_income} formatter={(v) => formatINR(v)} />
+                </p>
+                <p className="text-[11px] text-amber-700 dark:text-amber-300/90 font-medium mt-1">
+                  Maintenance & RSVPs
+                </p>
+              </div>
             </div>
 
-            <div className="card p-5 bg-gradient-to-br from-amber-50/80 via-white to-white border-amber-200/70 shadow-sm relative overflow-hidden">
+            {/* 3. Total Outflow / Expenses */}
+            <div className="stat-card-expense p-5 rounded-2xl flex flex-col justify-between card-entrance stagger-3">
               <div className="flex items-center justify-between">
-                <span className="text-[11px] font-extrabold uppercase tracking-wider text-amber-800">Current Balance</span>
-                <div className="w-8 h-8 rounded-xl bg-amber-100 flex items-center justify-center text-amber-700">
-                  <Wallet className="w-4 h-4" />
+                <span className="text-xs font-bold text-rose-800 dark:text-rose-300 font-mono">TOTAL OUTFLOW</span>
+                <div className="w-8 h-8 rounded-xl bg-rose-100 dark:bg-rose-950 flex items-center justify-center">
+                  <TrendingDown className="w-4 h-4 text-rose-700 dark:text-rose-300" />
                 </div>
               </div>
-              <p className="text-2xl font-black text-slate-900 mt-2 font-mono">
-                <AnimatedCounter value={summary.current_balance} formatter={(v) => formatINR(v)} />
-              </p>
-              <p className="text-[11px] text-amber-700 mt-1 font-medium">Net Liquid Society Reserve Fund</p>
+              <div className="mt-4">
+                <p className="text-2xl font-extrabold text-rose-950 dark:text-rose-100 font-mono">
+                  <AnimatedCounter value={summary.total_expense} formatter={(v) => formatINR(v)} />
+                </p>
+                <p className="text-[11px] text-rose-700 dark:text-rose-300/90 font-medium mt-1">
+                  Utilities, AMC & Vendors
+                </p>
+              </div>
+            </div>
+
+            {/* 4. Audited Ledger Entries / Health */}
+            <div className="stat-card-neutral p-5 rounded-2xl flex flex-col justify-between card-entrance stagger-4">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-slate-700 dark:text-teal-300 font-mono">AUDITED ENTRIES</span>
+                <div className="w-8 h-8 rounded-xl bg-slate-200/80 dark:bg-teal-950 flex items-center justify-center">
+                  <Receipt className="w-4 h-4 text-teal-600 dark:text-teal-300" />
+                </div>
+              </div>
+              <div className="mt-4">
+                <p className="text-2xl font-extrabold text-slate-900 dark:text-teal-100 font-mono">
+                  <AnimatedCounter value={ledger.length} suffix=" Records" />
+                </p>
+                <p className="text-[11px] text-slate-500 dark:text-teal-300/90 font-medium mt-1">
+                  100% Traceable Transactions
+                </p>
+              </div>
             </div>
           </div>
         )}
