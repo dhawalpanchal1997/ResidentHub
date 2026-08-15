@@ -91,6 +91,23 @@ const SAMPLE_PHOTO_PRESETS = [
   { label: "Female 2", url: "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=400&h=400&fit=crop&crop=faces&auto=format&q=80" },
 ];
 
+const formatINR = (n: number) =>
+  new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR",
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(n);
+
+const formatDate = (d: string | Date) => {
+  const dt = new Date(d);
+  return dt.toLocaleDateString("en-IN", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+};
+
 export default function DashboardPage() {
   const { user, isAdmin, login } = useAuth();
   const [events, setEvents] = useState<EventItem[]>([]);
@@ -526,23 +543,6 @@ export default function DashboardPage() {
   const filteredNotices = notices.filter(
     (n) => selectedNoticeCategory === "All" || n.category.toLowerCase() === selectedNoticeCategory.toLowerCase()
   );
-
-  const formatINR = (n: number) =>
-    new Intl.NumberFormat("en-IN", {
-      style: "currency",
-      currency: "INR",
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(n);
-
-  const formatDate = (d: string | Date) => {
-    const dt = new Date(d);
-    return dt.toLocaleDateString("en-IN", {
-      day: "numeric",
-      month: "short",
-      year: "numeric",
-    });
-  };
 
   return (
     <AppShell>
