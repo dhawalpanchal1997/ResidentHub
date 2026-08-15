@@ -732,29 +732,32 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         </div>
       )}
 
-      {/* 🤖 Floating Action Widget on Every Page */}
-      <div className="fixed bottom-6 right-6 z-40">
-        <button
-          onClick={() => setBotDrawerOpen(true)}
-          className="group relative flex items-center gap-2.5 px-4 py-3 rounded-full bg-gradient-to-r from-orange-600 via-amber-600 to-orange-500 hover:from-orange-500 hover:to-amber-500 text-white font-extrabold text-xs shadow-xl hover:shadow-2xl hover:scale-105 transition-all duration-300 ring-4 ring-orange-500/20 active:scale-95"
-          title="Report Maintenance Issue via AI Assistant"
-        >
-          <div className="relative">
-            <Bot className="w-5 h-5 group-hover:rotate-12 transition-transform" />
-            <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-emerald-400 border-2 border-orange-600 animate-pulse" />
+      {/* 🤖 Floating Action Widget & Right Drawer (Only available to authenticated residents) */}
+      {user && (
+        <>
+          <div className="fixed bottom-6 right-6 z-40">
+            <button
+              onClick={() => setBotDrawerOpen(true)}
+              className="group relative flex items-center gap-2.5 px-4 py-3 rounded-full bg-gradient-to-r from-orange-600 via-amber-600 to-orange-500 hover:from-orange-500 hover:to-amber-500 text-white font-extrabold text-xs shadow-xl hover:shadow-2xl hover:scale-105 transition-all duration-300 ring-4 ring-orange-500/20 active:scale-95"
+              title="Report Maintenance Issue via AI Assistant"
+            >
+              <div className="relative">
+                <Bot className="w-5 h-5 group-hover:rotate-12 transition-transform" />
+                <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-emerald-400 border-2 border-orange-600 animate-pulse" />
+              </div>
+              <span className="tracking-wide hidden sm:inline">Report Issue</span>
+              <span className="px-1.5 py-0.5 rounded-md bg-white/20 text-[10px] font-mono font-bold tracking-wider">
+                AI BOT
+              </span>
+            </button>
           </div>
-          <span className="tracking-wide hidden sm:inline">Report Issue</span>
-          <span className="px-1.5 py-0.5 rounded-md bg-white/20 text-[10px] font-mono font-bold tracking-wider">
-            AI BOT
-          </span>
-        </button>
-      </div>
 
-      {/* 🤖 Global Slide-in Right Drawer */}
-      <IssueIntakeBotDrawer
-        isOpen={botDrawerOpen}
-        onClose={() => setBotDrawerOpen(false)}
-      />
+          <IssueIntakeBotDrawer
+            isOpen={botDrawerOpen}
+            onClose={() => setBotDrawerOpen(false)}
+          />
+        </>
+      )}
     </div>
   );
 }
