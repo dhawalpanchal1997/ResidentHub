@@ -732,7 +732,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             <Bot className="w-5 h-5 group-hover:rotate-12 transition-transform" />
             <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-emerald-400 border-2 border-orange-600 animate-pulse" />
           </div>
-          <span className="tracking-wide hidden sm:inline">Report Issue / Helpdesk</span>
+          <span className="tracking-wide hidden sm:inline">Report Issue</span>
           <span className="px-1.5 py-0.5 rounded-md bg-white/20 text-[10px] font-mono font-bold tracking-wider">
             AI BOT
           </span>
