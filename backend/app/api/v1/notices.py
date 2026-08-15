@@ -12,59 +12,10 @@ from app.schemas.notice import NoticeCreate, NoticeResponse
 
 router = APIRouter(prefix="/notices", tags=["Society Notice Board"])
 
-INITIAL_NOTICES = [
-    {
-        "title": "Quarterly Schindler Lift AMC & Inspection Complete",
-        "content": "Quarterly preventive maintenance and safety sensor testing for Tower 24 Passenger Lifts A & B was conducted successfully. Next inspection scheduled in November 2026.",
-        "category": "Maintenance",
-        "priority": "normal",
-        "author_name": "Estate & Maintenance Committee",
-    },
-    {
-        "title": "Overhead Water Tank Cleaning & Chlorination",
-        "content": "Semi-annual overhead & underground water tank sanitization scheduled for this Sunday between 10:00 AM and 2:00 PM. Please store adequate water for morning requirements.",
-        "category": "Maintenance",
-        "priority": "high",
-        "author_name": "Managing Committee",
-    },
-    {
-        "title": "Independence Day Celebration & Flag Hoisting Schedule",
-        "content": "All residents and their families are cordially invited to celebrate the 76th Independence Day at the Society Clubhouse ground. Flag hoisting begins promptly at 9:00 AM followed by cultural events and refreshments.",
-        "category": "Festival",
-        "priority": "normal",
-        "author_name": "Cultural Committee",
-    },
-    {
-        "title": "Rooftop Solar Meter Grid Synchronization Verification",
-        "content": "Common area rooftop solar net-metering grid sync verification complete. Estimated monthly electricity savings: ~₹18,500.",
-        "category": "Financial",
-        "priority": "normal",
-        "author_name": "Managing Committee",
-    },
-]
-
 @router.get("/", response_model=List[NoticeResponse])
 async def get_notices(db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Notice).order_by(Notice.created_at.desc()))
     notices = result.scalars().all()
-
-    # If database has no notices yet, seed initial notices
-    if not notices:
-        for item in INITIAL_NOTICES:
-            notice_obj = Notice(
-                title=item["title"],
-                content=item["content"],
-                category=item["category"],
-                priority=item["priority"],
-                author_name=item["author_name"],
-                created_at=datetime.utcnow()
-            )
-            db.add(notice_obj)
-        await db.commit()
-        
-        result = await db.execute(select(Notice).order_by(Notice.created_at.desc()))
-        notices = result.scalars().all()
-
     return [NoticeResponse.model_validate(n) for n in notices]
 
 @router.post("/", response_model=NoticeResponse, status_code=status.HTTP_201_CREATED)

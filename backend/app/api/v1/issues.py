@@ -25,167 +25,6 @@ from app.services.issue_dedup import verify_issue_duplicate_with_llm
 
 router = APIRouter(prefix="/issues", tags=["Society Issues & Helpdesk"])
 
-INITIAL_ISSUES = [
-    {
-        "ticket_number": "ISSUE-T24-1042",
-        "flat_number": "B-201",
-        "reported_by": "Anil Sharma",
-        "title": "Low water pressure in master bathroom line",
-        "description": "The water flow from the main supply inlet in the master bathroom shower has been inconsistent since yesterday evening.",
-        "category": "Plumbing",
-        "priority": "medium",
-        "status": "in_progress",
-        "location": "Flat B-201 Master Bath",
-        "preferred_slot": "Today 5:00 PM - 7:00 PM",
-        "assigned_vendor_name": "Apex Plumbing Services",
-        "created_at": datetime.utcnow() - timedelta(hours=4),
-        "activities": [
-            {
-                "action": "created",
-                "actor_name": "Anil Sharma",
-                "actor_role": "resident",
-                "comment": "Issue logged via AI Resident Concierge Bot",
-                "created_at": datetime.utcnow() - timedelta(hours=4),
-            },
-            {
-                "action": "assigned",
-                "actor_name": "Managing Committee",
-                "actor_role": "admin",
-                "comment": "Assigned to Apex Plumbing Services. Technician arriving during resident preferred slot.",
-                "created_at": datetime.utcnow() - timedelta(hours=2),
-            },
-        ],
-    },
-    {
-        "ticket_number": "ISSUE-T24-1039",
-        "flat_number": "Common Area",
-        "reported_by": "Priya Patel (A-102)",
-        "title": "Passenger Lift A door sensor jammed",
-        "description": "Lift A door is stuck open on 4th floor and making a clicking noise when trying to close.",
-        "category": "Elevator",
-        "priority": "high",
-        "status": "open",
-        "location": "Passenger Lift A",
-        "preferred_slot": "Immediate / Emergency",
-        "assigned_vendor_name": "Schindler Elevators AMC Team",
-        "created_at": datetime.utcnow() - timedelta(hours=2),
-        "activities": [
-            {
-                "action": "created",
-                "actor_name": "Priya Patel",
-                "actor_role": "resident",
-                "comment": "Reported optical sensor delay on Floor 7",
-                "created_at": datetime.utcnow() - timedelta(hours=14),
-            },
-            {
-                "action": "status_changed",
-                "actor_name": "Estate Safety Team",
-                "actor_role": "admin",
-                "comment": "Dispatched Schindler AMC emergency maintenance crew",
-                "created_at": datetime.utcnow() - timedelta(hours=10),
-            },
-            {
-                "action": "resolved",
-                "actor_name": "Schindler Elevators AMC Team",
-                "actor_role": "vendor",
-                "comment": "Sensor realignment complete. Tested 20 cycles with zero anomalies.",
-                "created_at": datetime.utcnow() - timedelta(hours=6),
-            },
-        ],
-    },
-    {
-        "ticket_number": "ISSUE-T24-1044",
-        "flat_number": "C-404",
-        "reported_by": "Vikram Malhotra",
-        "title": "Corridor light fixture flickering outside Flat C-404",
-        "description": "The ceiling recessed LED panel in the 4th floor west wing corridor is flickering intermittently.",
-        "category": "Electrical",
-        "priority": "low",
-        "status": "open",
-        "location": "4th Floor West Wing Corridor",
-        "preferred_slot": "Tomorrow Morning",
-        "created_at": datetime.utcnow() - timedelta(hours=1),
-        "activities": [
-            {
-                "action": "created",
-                "actor_name": "Vikram Malhotra",
-                "actor_role": "resident",
-                "comment": "Ticket created via AI Issue Assistant",
-                "created_at": datetime.utcnow() - timedelta(hours=1),
-            }
-        ],
-    },
-    {
-        "ticket_number": "ISSUE-T24-1031",
-        "flat_number": "Clubhouse",
-        "reported_by": "Rajesh Kulkarni",
-        "title": "Gymnasium AC thermostat calibration",
-        "description": "AC unit 2 in the fitness center cooling was sub-optimal during peak morning workout hours.",
-        "category": "Common Area",
-        "priority": "medium",
-        "status": "resolved",
-        "location": "Ground Floor Clubhouse Gym",
-        "assigned_vendor_name": "CoolBreeze HVAC Services",
-        "resolution_notes": "Filters washed, refrigerant pressure topped up, and thermostat recalibrated to 23°C.",
-        "resolved_at": datetime.utcnow() - timedelta(days=1),
-        "created_at": datetime.utcnow() - timedelta(days=2),
-        "activities": [
-            {
-                "action": "created",
-                "actor_name": "Rajesh Kulkarni",
-                "actor_role": "resident",
-                "comment": "Issue logged for Gym AC Unit 2",
-                "created_at": datetime.utcnow() - timedelta(days=2),
-            },
-            {
-                "action": "resolved",
-                "actor_name": "Managing Committee",
-                "actor_role": "admin",
-                "comment": "Servicing completed by CoolBreeze HVAC. Cooling verified by security staff.",
-                "created_at": datetime.utcnow() - timedelta(days=1),
-            },
-        ],
-    },
-]
-
-async def _ensure_seed_issues(db: AsyncSession):
-    result = await db.execute(select(Issue).options(selectinload(Issue.activities)))
-    issues = result.scalars().all()
-    if not issues:
-        for item in INITIAL_ISSUES:
-            issue_obj = Issue(
-                ticket_number=item["ticket_number"],
-                flat_number=item["flat_number"],
-                reported_by=item["reported_by"],
-                title=item["title"],
-                description=item["description"],
-                category=item["category"],
-                priority=item["priority"],
-                status=item["status"],
-                location=item["location"],
-                preferred_slot=item.get("preferred_slot"),
-                assigned_vendor_name=item.get("assigned_vendor_name"),
-                resolution_notes=item.get("resolution_notes"),
-                resolved_at=item.get("resolved_at"),
-                created_at=item["created_at"],
-                updated_at=item["created_at"],
-            )
-            db.add(issue_obj)
-            await db.flush()
-
-            for act in item.get("activities", []):
-                act_obj = IssueActivity(
-                    issue_id=issue_obj.id,
-                    action=act["action"],
-                    actor_name=act["actor_name"],
-                    actor_role=act["actor_role"],
-                    comment=act["comment"],
-                    created_at=act["created_at"],
-                )
-                db.add(act_obj)
-
-        await db.commit()
-
 @router.get("/", response_model=List[IssueResponse])
 async def get_issues(
     flat_number: Optional[str] = None,
@@ -195,8 +34,6 @@ async def get_issues(
     search: Optional[str] = None,
     db: AsyncSession = Depends(get_db),
 ):
-    await _ensure_seed_issues(db)
-
     query = select(Issue).options(selectinload(Issue.activities)).order_by(Issue.created_at.desc())
 
     if status and status != "all":
@@ -226,8 +63,6 @@ async def verify_duplicate_issue(
     db: AsyncSession = Depends(get_db),
     current_user: Optional[User] = Depends(get_optional_current_user)
 ):
-    await _ensure_seed_issues(db)
-    
     # Query active open or in_progress tickets in society
     result = await db.execute(
         select(Issue)
@@ -265,7 +100,6 @@ async def verify_duplicate_issue(
 
 @router.get("/analytics/overview", response_model=IssueAnalyticsOverview)
 async def get_issue_analytics(db: AsyncSession = Depends(get_db)):
-    await _ensure_seed_issues(db)
     result = await db.execute(select(Issue).options(selectinload(Issue.activities)))
     issues = result.scalars().all()
 
