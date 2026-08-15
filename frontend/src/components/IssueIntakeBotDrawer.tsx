@@ -22,9 +22,13 @@ import {
   ChevronRight,
   Check,
   RotateCcw,
+  Eye,
+  AlertCircle,
+  ExternalLink,
 } from "lucide-react";
-import { createIssue, IssueItem } from "@/lib/api";
+import { createIssue, fetchIssues, IssueItem } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 
 interface IssueIntakeBotDrawerProps {
@@ -39,6 +43,7 @@ interface ChatMessage {
   text: string;
   timestamp: string;
   quickReplies?: Array<{ label: string; value: string; icon?: string }>;
+  duplicateMatch?: IssueItem;
 }
 
 const CATEGORIES = [
@@ -81,9 +86,14 @@ export default function IssueIntakeBotDrawer({
   onIssueCreated,
 }: IssueIntakeBotDrawerProps) {
   const { user } = useAuth();
+  const router = useRouter();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [step, setStep] = useState<number>(0);
   const [isTyping, setIsTyping] = useState<boolean>(false);
+
+  // Existing active society issues for duplicate detection
+  const [existingIssues, setExistingIssues] = useState<IssueItem[]>([]);
+  const [detectedDuplicate, setDetectedDuplicate] = useState<IssueItem | null>(null);
 
   // Collected Form State
   const [category, setCategory] = useState<string>("");
@@ -107,7 +117,16 @@ export default function IssueIntakeBotDrawer({
     if (isOpen) {
       scrollToBottom();
     }
-  }, [messages, isTyping, isOpen]);
+  }, [messages, isTyping, isOpen, detectedDuplicate]);
+
+  // Load existing society issues on mount/open for real-time duplicate screening
+  useEffect(() => {
+    if (isOpen) {
+      fetchIssues()
+        .then((items) => setExistingIssues(items))
+        .catch(() => {});
+    }
+  }, [isOpen]);
 
   // Reset & start conversation
   const resetConversation = () => {
@@ -120,6 +139,7 @@ export default function IssueIntakeBotDrawer({
     setPreferredSlot("");
     setInputText("");
     setCreatedIssue(null);
+    setDetectedDuplicate(null);
 
     const userName = user?.full_name?.split(" ")[0] || "Resident";
 
@@ -146,7 +166,7 @@ export default function IssueIntakeBotDrawer({
     }
   }, [isOpen, user]);
 
-  const addBotMessage = (text: string, quickReplies?: any[]) => {
+  const addBotMessage = (text: string, quickReplies?: any[], duplicateMatch?: IssueItem) => {
     setIsTyping(true);
     setTimeout(() => {
       setIsTyping(false);
@@ -158,6 +178,7 @@ export default function IssueIntakeBotDrawer({
           text,
           timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
           quickReplies,
+          duplicateMatch,
         },
       ]);
     }, 500);
@@ -175,6 +196,43 @@ export default function IssueIntakeBotDrawer({
     ]);
   };
 
+  // ── Smart AI Duplicate Issue Scanner ──────────────────────────
+  const checkDuplicateIssue = (cat: string, loc: string, descText: string): IssueItem | null => {
+    if (!existingIssues || existingIssues.length === 0) return null;
+
+    const queryKeywords = `${cat} ${loc} ${descText}`
+      .toLowerCase()
+      .split(/[\s,.-]+/)
+      .filter((w) => w.length > 3);
+
+    for (const item of existingIssues) {
+      // Only match against active, un-closed tickets (open, assigned, in_progress)
+      if (item.status === "resolved" || item.status === "closed") continue;
+
+      const itemText = `${item.category} ${item.location} ${item.title} ${item.description}`.toLowerCase();
+
+      // Check common area match (Lift, Clubhouse, Gym, Corridor)
+      const isCommonArea =
+        loc.toLowerCase().includes("lift") ||
+        loc.toLowerCase().includes("clubhouse") ||
+        loc.toLowerCase().includes("lobby") ||
+        loc.toLowerCase().includes("parking") ||
+        loc.toLowerCase().includes("garden");
+
+      if (isCommonArea && item.location.toLowerCase().includes(loc.toLowerCase().slice(0, 5))) {
+        return item;
+      }
+
+      // Check keyword overlap (e.g. lift sensor, master bathroom water, corridor light)
+      const matchingCount = queryKeywords.filter((kw) => itemText.includes(kw)).length;
+      if (matchingCount >= 2) {
+        return item;
+      }
+    }
+
+    return null;
+  };
+
   const handleSelectCategory = (catVal: string, catLabel: string) => {
     setCategory(catVal);
     addUserMessage(`${catLabel}`);
@@ -190,8 +248,20 @@ export default function IssueIntakeBotDrawer({
     const finalLocation = locVal === "Flat Interior" && user?.flat_number ? `Flat ${user.flat_number}` : locVal;
     setLocation(finalLocation);
     addUserMessage(`${locLabel}`);
-    setStep(2);
 
+    // Check for common area duplicate (e.g. Lift, Gym, Parking)
+    const duplicate = checkDuplicateIssue(category, finalLocation, "");
+    if (duplicate) {
+      setDetectedDuplicate(duplicate);
+      addBotMessage(
+        `💡 **Active Ticket Found for this Area!**\n\nA similar issue is already registered under **#${duplicate.ticket_number}** (*${duplicate.title}*) with status **${duplicate.status.toUpperCase()}** (Assigned to: **${duplicate.assigned_vendor_name || "Managing Committee"}**).`,
+        undefined,
+        duplicate
+      );
+      return;
+    }
+
+    setStep(2);
     addBotMessage(
       `Got it, at **${finalLocation}**. What is the urgency / priority level of this issue?`,
       PRIORITIES
@@ -220,8 +290,20 @@ export default function IssueIntakeBotDrawer({
       const generatedTitle = text.length > 55 ? `${text.slice(0, 52)}...` : text;
       setTitle(generatedTitle);
       addUserMessage(text);
-      setStep(4);
 
+      // Deep duplicate check on description text
+      const duplicate = checkDuplicateIssue(category, location, text);
+      if (duplicate) {
+        setDetectedDuplicate(duplicate);
+        addBotMessage(
+          `💡 **Wait, a matching issue is already in progress!**\n\nTicket **#${duplicate.ticket_number}** (*${duplicate.title}*) is currently **${duplicate.status.toUpperCase()}** and assigned to **${duplicate.assigned_vendor_name || "Committee Team"}**.`,
+          undefined,
+          duplicate
+        );
+        return;
+      }
+
+      setStep(4);
       addBotMessage(
         `Thank you for providing the details! When is your preferred time slot for technician inspection or maintenance access?`,
         TIME_SLOTS
@@ -247,6 +329,21 @@ export default function IssueIntakeBotDrawer({
   const showSummary = (slotVal: string) => {
     addBotMessage(
       `Great! Here is a summary of your ticket request. Please review and click **Confirm & Log Ticket** to broadcast to the committee.`
+    );
+  };
+
+  const handleRedirectToExistingTicket = (ticket: IssueItem) => {
+    onClose();
+    router.push(`/issues?search=${encodeURIComponent(ticket.ticket_number)}`);
+  };
+
+  const handleBypassDuplicate = () => {
+    setDetectedDuplicate(null);
+    addUserMessage("This is a separate / distinct issue. Proceed with logging.");
+    setStep(4);
+    addBotMessage(
+      `Understood! Proceeding with your new request. When is your preferred time slot for technician inspection?`,
+      TIME_SLOTS
     );
   };
 
@@ -310,7 +407,7 @@ export default function IssueIntakeBotDrawer({
                 </h3>
               </div>
               <p className="text-[11px] text-stone-300">
-                Interactive Issue Intake & Helpdesk • Tower 24
+                Interactive Issue Intake & Smart Triage • Tower 24
               </p>
             </div>
           </div>
@@ -364,6 +461,49 @@ export default function IssueIntakeBotDrawer({
                     }`}
                   >
                     <p className="whitespace-pre-line">{m.text}</p>
+
+                    {/* 💡 Rich Existing Duplicate Ticket Card */}
+                    {m.duplicateMatch && (
+                      <div className="mt-3 p-3.5 rounded-xl bg-amber-50 dark:bg-[#251e18] border border-amber-300 dark:border-amber-900/80 text-stone-900 dark:text-stone-100 space-y-2.5 shadow-xs">
+                        <div className="flex items-center justify-between">
+                          <span className="font-mono font-extrabold text-[11px] text-amber-800 dark:text-amber-400">
+                            #{m.duplicateMatch.ticket_number}
+                          </span>
+                          <span className="px-2 py-0.5 rounded-full text-[9px] font-bold font-mono uppercase bg-amber-200/80 dark:bg-amber-950 text-amber-900 dark:text-amber-300">
+                            {m.duplicateMatch.status.replace("_", " ")}
+                          </span>
+                        </div>
+
+                        <div>
+                          <h4 className="font-extrabold text-xs text-stone-900 dark:text-white">
+                            {m.duplicateMatch.title}
+                          </h4>
+                          <p className="text-[11px] text-stone-600 dark:text-stone-400 mt-0.5">
+                            📍 {m.duplicateMatch.location} • Assigned to:{" "}
+                            <span className="font-bold text-emerald-700 dark:text-emerald-400">
+                              {m.duplicateMatch.assigned_vendor_name || "Managing Committee"}
+                            </span>
+                          </p>
+                        </div>
+
+                        <div className="flex flex-col sm:flex-row gap-2 pt-1">
+                          <button
+                            onClick={() => handleRedirectToExistingTicket(m.duplicateMatch!)}
+                            className="btn-primary flex-1 py-1.5 px-3 text-[11px] font-bold flex items-center justify-center gap-1.5 shadow-xs"
+                          >
+                            <Eye className="w-3.5 h-3.5" />
+                            <span>View & Track Ticket</span>
+                          </button>
+                          <button
+                            onClick={handleBypassDuplicate}
+                            className="btn-secondary flex-1 py-1.5 px-3 text-[11px] font-bold"
+                          >
+                            Still Log New Issue
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
                     <span
                       className={`text-[9px] font-mono block mt-1.5 ${
                         isBot ? "text-stone-400" : "text-orange-200 text-right"
@@ -374,7 +514,7 @@ export default function IssueIntakeBotDrawer({
                   </div>
 
                   {/* Interactive Quick-Reply Chips */}
-                  {isBot && m.quickReplies && m.quickReplies.length > 0 && !createdIssue && (
+                  {isBot && m.quickReplies && m.quickReplies.length > 0 && !createdIssue && !detectedDuplicate && (
                     <div className="flex flex-wrap gap-1.5 pt-1">
                       {m.quickReplies.map((reply, idx) => (
                         <button
@@ -414,7 +554,7 @@ export default function IssueIntakeBotDrawer({
           )}
 
           {/* Summary Confirmation Card */}
-          {step === 5 && !createdIssue && (
+          {step === 5 && !createdIssue && !detectedDuplicate && (
             <div className="p-4 rounded-2xl bg-white dark:bg-[#1c1714] border border-amber-300 dark:border-amber-800 shadow-md space-y-3 mt-3">
               <div className="flex items-center justify-between border-b border-stone-100 dark:border-[#332a22] pb-2">
                 <span className="text-xs font-mono font-bold text-amber-700 dark:text-amber-400 uppercase flex items-center gap-1">
@@ -507,12 +647,12 @@ export default function IssueIntakeBotDrawer({
                 ? "Type specific timing or select slot above..."
                 : "Type message or select an option..."
             }
-            disabled={createdIssue !== null}
+            disabled={createdIssue !== null || detectedDuplicate !== null}
             className="form-input flex-1 text-xs py-2"
           />
           <button
             type="submit"
-            disabled={!inputText.trim() || createdIssue !== null}
+            disabled={!inputText.trim() || createdIssue !== null || detectedDuplicate !== null}
             className="p-2.5 rounded-xl bg-orange-600 hover:bg-orange-700 disabled:opacity-50 text-white transition-all shadow-xs shrink-0"
             title="Send Message"
           >

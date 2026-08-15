@@ -122,12 +122,22 @@ export default function IssuesHelpdeskPage() {
     loadData();
   }, [user]);
 
-  // Sync selected issue details when updated
+  // Auto-open ticket if search or id parameter is present in URL
   useEffect(() => {
-    if (selectedIssue) {
-      const updated = issues.find((i) => i.id === selectedIssue.id);
-      if (updated) {
-        setSelectedIssue(updated);
+    if (typeof window !== "undefined" && issues.length > 0) {
+      const params = new URLSearchParams(window.location.search);
+      const searchVal = params.get("search") || params.get("id");
+      if (searchVal) {
+        setSearchQuery(searchVal);
+        setViewScope("all"); // Ensure search scans across all society tickets
+        const match = issues.find(
+          (i) =>
+            i.ticket_number.toLowerCase().includes(searchVal.toLowerCase()) ||
+            i.id === searchVal
+        );
+        if (match) {
+          handleOpenDetailModal(match);
+        }
       }
     }
   }, [issues]);
