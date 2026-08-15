@@ -5,6 +5,7 @@ from app.models.ledger import LedgerTransaction
 from app.models.vendor import ServiceProvider, ProviderReview
 from app.models.meeting import Meeting, MeetingChunk
 from app.models.notice import Notice
+from app.models.committee import CommitteeMember
 
 __all__ = [
     "Society",
@@ -18,4 +19,5 @@ __all__ = [
     "Meeting",
     "MeetingChunk",
     "Notice",
+    "CommitteeMember",
 ]

@@ -684,3 +684,93 @@ export async function deleteNotice(noticeId: string): Promise<void> {
     throw new Error("Failed to delete notice");
   }
 }
+
+// ── Committee & Leadership API ─────────────────────────────────
+
+export interface CommitteeMemberItem {
+  id: string;
+  society_id?: string | null;
+  name: string;
+  role: string;
+  flat_number: string;
+  photo_url?: string | null;
+  badge: string;
+  applaud_count: number;
+  display_order: number;
+  created_at: string;
+}
+
+export async function fetchCommitteeMembers(): Promise<CommitteeMemberItem[]> {
+  const res = await fetch(`${API_BASE_URL}/committee/`, {
+    headers: authHeaders(),
+    cache: "no-store",
+  });
+  if (!res.ok) {
+    throw new Error("Failed to fetch committee members");
+  }
+  return res.json();
+}
+
+export async function createCommitteeMember(payload: {
+  name: string;
+  role: string;
+  flat_number: string;
+  photo_url?: string;
+  badge?: string;
+  display_order?: number;
+}): Promise<CommitteeMemberItem> {
+  const res = await fetch(`${API_BASE_URL}/committee/`, {
+    method: "POST",
+    headers: authHeaders(),
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to create committee member record");
+  }
+  return res.json();
+}
+
+export async function updateCommitteeMember(
+  memberId: string,
+  payload: {
+    name?: string;
+    role?: string;
+    flat_number?: string;
+    photo_url?: string;
+    badge?: string;
+    display_order?: number;
+  }
+): Promise<CommitteeMemberItem> {
+  const res = await fetch(`${API_BASE_URL}/committee/${memberId}`, {
+    method: "PUT",
+    headers: authHeaders(),
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to update committee member record");
+  }
+  return res.json();
+}
+
+export async function deleteCommitteeMember(memberId: string): Promise<void> {
+  const res = await fetch(`${API_BASE_URL}/committee/${memberId}`, {
+    method: "DELETE",
+    headers: authHeaders(),
+  });
+  if (!res.ok) {
+    throw new Error("Failed to delete committee member record");
+  }
+}
+
+export async function applaudCommitteeMember(memberId: string): Promise<{ id: string; applaud_count: number }> {
+  const res = await fetch(`${API_BASE_URL}/committee/${memberId}/applaud`, {
+    method: "POST",
+    headers: authHeaders(),
+  });
+  if (!res.ok) {
+    throw new Error("Failed to applaud member");
+  }
+  return res.json();
+}

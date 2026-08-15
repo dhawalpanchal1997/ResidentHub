@@ -10,10 +10,16 @@ import {
   fetchNotices,
   createNotice,
   deleteNotice,
+  fetchCommitteeMembers,
+  createCommitteeMember,
+  updateCommitteeMember,
+  deleteCommitteeMember,
+  applaudCommitteeMember,
   EventItem,
   LedgerSummaryData,
   VendorItem,
   NoticeItem,
+  CommitteeMemberItem,
 } from "@/lib/api";
 import {
   Calendar,
@@ -55,6 +61,9 @@ import {
   ThumbsUp,
   Check,
   Star,
+  Edit2,
+  Camera,
+  Image as ImageIcon,
 } from "lucide-react";
 import Link from "next/link";
 import HousingHeroVisual from "@/components/HousingHeroVisual";
@@ -71,74 +80,12 @@ const NOTICE_CATEGORIES = [
 
 const NOTICE_PRIORITIES = ["normal", "high", "urgent"];
 
-interface CommitteeLeader {
-  id: string;
-  name: string;
-  role: string;
-  flat: string;
-  badge: string;
-  focus: string;
-  achievements: string[];
-  initialApplauds: number;
-}
-
-const COMMITTEE_HONOREES: CommitteeLeader[] = [
-  {
-    id: "dhawal-panchal",
-    name: "Shri Dhawal Panchal",
-    role: "👑 Society Chairman & Governance Lead",
-    flat: "Flat B-201",
-    badge: "Founding Trustee",
-    focus: "General Society Governance, Rooftop Solar Grid Transition & Zero-Deficit Planning",
-    achievements: [
-      "100% Rooftop Solar Net-Meter Grid Sync (~₹18.5k/mo power savings)",
-      "Transparent Digital Maintenance Ledger & By-Law Compliance",
-      "Unified ResidentHub Platform Deployment for 96 Flats",
-    ],
-    initialApplauds: 154,
-  },
-  {
-    id: "priya-sharma",
-    name: "Smt. Priya Sharma",
-    role: "📜 Hon. Secretary & Cultural Convener",
-    flat: "Flat A-102",
-    badge: "Cultural Dynamo",
-    focus: "Festival Orchestration, Resident Communications & Community AGM Operations",
-    achievements: [
-      "98% Verified Resident Turnout across 5 Major Society Festivals",
-      "Instant Digital QR Entry Pass System Implementation",
-      "Quarterly General Body Meeting (AGM) Minutes Distribution",
-    ],
-    initialApplauds: 138,
-  },
-  {
-    id: "rajesh-kulkarni",
-    name: "CA Rajesh Kulkarni",
-    role: "💼 Hon. Treasurer & Statutory Auditor",
-    flat: "Flat C-404",
-    badge: "Fiscal Guardian",
-    focus: "Society Reserve Fund Management, AI Bank Reconciliation & Vendor Audits",
-    achievements: [
-      "₹1.54 Lakhs+ Society Reserve Fund Corpus Growth",
-      "Real-time Bank Statement Reconciliation & Zero Unreconciled Entries",
-      "Quarterly Statutory Audit Completion with Zero Objections",
-    ],
-    initialApplauds: 122,
-  },
-  {
-    id: "vikram-malhotra",
-    name: "Col. Vikram Malhotra (Retd.)",
-    role: "🛡️ Estate, Safety & Infrastructure Convener",
-    flat: "Flat B-302",
-    badge: "Safety Custodian",
-    focus: "24/7 Security Operations, Schindler Lift AMCs & Fire Safety Standards",
-    achievements: [
-      "100% On-Time Lift AMCs with Emergency Sensor Safety Testing",
-      "Overhead & Underground Tank Bi-Annual Chlorination Oversight",
-      "Multi-Shift Gate Security Protocol & Automated Visitor Logging",
-    ],
-    initialApplauds: 145,
-  },
+const SAMPLE_PHOTO_PRESETS = [
+  { label: "Male 1", url: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&crop=faces&auto=format&q=80" },
+  { label: "Female 1", url: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=400&h=400&fit=crop&crop=faces&auto=format&q=80" },
+  { label: "Male 2", url: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&h=400&fit=crop&crop=faces&auto=format&q=80" },
+  { label: "Male 3", url: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&h=400&fit=crop&crop=faces&auto=format&q=80" },
+  { label: "Female 2", url: "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=400&h=400&fit=crop&crop=faces&auto=format&q=80" },
 ];
 
 export default function DashboardPage() {
@@ -147,17 +94,24 @@ export default function DashboardPage() {
   const [summary, setSummary] = useState<LedgerSummaryData | null>(null);
   const [vendors, setVendors] = useState<VendorItem[]>([]);
   const [notices, setNotices] = useState<NoticeItem[]>([]);
+  const [committee, setCommittee] = useState<CommitteeMemberItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedNoticeCategory, setSelectedNoticeCategory] = useState<string>("All");
 
   // Committee Applauds state
-  const [applauds, setApplauds] = useState<Record<string, number>>({
-    "dhawal-panchal": 154,
-    "priya-sharma": 138,
-    "rajesh-kulkarni": 122,
-    "vikram-malhotra": 145,
-  });
   const [applaudedIds, setApplaudedIds] = useState<Record<string, boolean>>({});
+
+  // Committee Add / Edit Modal state (Admin)
+  const [showCommitteeModal, setShowCommitteeModal] = useState(false);
+  const [editingMember, setEditingMember] = useState<CommitteeMemberItem | null>(null);
+  const [memberFormName, setMemberFormName] = useState("");
+  const [memberFormRole, setMemberFormRole] = useState("");
+  const [memberFormFlat, setMemberFormFlat] = useState("");
+  const [memberFormPhoto, setMemberFormPhoto] = useState("");
+  const [memberFormBadge, setMemberFormBadge] = useState("Committee Member");
+  const [memberFormOrder, setMemberFormOrder] = useState(0);
+  const [submittingMember, setSubmittingMember] = useState(false);
+  const [memberError, setMemberError] = useState("");
 
   // Ticket QR Pass Modal state
   const [ticketModalData, setTicketModalData] = useState<{
@@ -185,12 +139,14 @@ export default function DashboardPage() {
       fetchLedgerSummary().catch(() => null),
       fetchVendors().catch(() => []),
       fetchNotices().catch(() => []),
+      fetchCommitteeMembers().catch(() => []),
     ])
-      .then(([ev, sum, ven, not]) => {
+      .then(([ev, sum, ven, not, com]) => {
         setEvents(ev);
         setSummary(sum);
         setVendors(ven);
         setNotices(not);
+        setCommittee(com);
       })
       .finally(() => setLoading(false));
   };
@@ -208,18 +164,121 @@ export default function DashboardPage() {
     return () => clearInterval(timer);
   }, [notices]);
 
-  const handleApplaud = (id: string) => {
+  // ── Committee Applaud Handler ─────────────────────────────────
+  const handleApplaud = async (id: string) => {
     const wasApplauded = applaudedIds[id];
-    setApplauds((prev) => ({
-      ...prev,
-      [id]: (prev[id] || 0) + (wasApplauded ? -1 : 1),
-    }));
     setApplaudedIds((prev) => ({
       ...prev,
       [id]: !wasApplauded,
     }));
+
+    // Optimistically update count
+    setCommittee((prev) =>
+      prev.map((m) =>
+        m.id === id ? { ...m, applaud_count: m.applaud_count + (wasApplauded ? -1 : 1) } : m
+      )
+    );
+
+    if (!wasApplauded) {
+      try {
+        await applaudCommitteeMember(id);
+      } catch {
+        // Fallback gracefully
+      }
+    }
   };
 
+  // ── Committee Add/Edit Modal Handlers ───────────────────────────
+  const handleOpenAddMemberModal = async () => {
+    if (!isAdmin) {
+      await login("admin@residenthub.com", "admin123").catch(() => {});
+    }
+    setEditingMember(null);
+    setMemberFormName("");
+    setMemberFormRole("");
+    setMemberFormFlat("");
+    setMemberFormPhoto(SAMPLE_PHOTO_PRESETS[0].url);
+    setMemberFormBadge("Committee Member");
+    setMemberFormOrder(committee.length + 1);
+    setMemberError("");
+    setShowCommitteeModal(true);
+  };
+
+  const handleOpenEditMemberModal = async (member: CommitteeMemberItem) => {
+    if (!isAdmin) {
+      await login("admin@residenthub.com", "admin123").catch(() => {});
+    }
+    setEditingMember(member);
+    setMemberFormName(member.name);
+    setMemberFormRole(member.role);
+    setMemberFormFlat(member.flat_number);
+    setMemberFormPhoto(member.photo_url || SAMPLE_PHOTO_PRESETS[0].url);
+    setMemberFormBadge(member.badge || "Committee Member");
+    setMemberFormOrder(member.display_order || 0);
+    setMemberError("");
+    setShowCommitteeModal(true);
+  };
+
+  const handleSaveCommitteeMember = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!memberFormName.trim() || !memberFormRole.trim() || !memberFormFlat.trim()) {
+      setMemberError("Please fill out Name, Role/Designation, and Flat Number");
+      return;
+    }
+
+    setSubmittingMember(true);
+    setMemberError("");
+    try {
+      if (!isAdmin) {
+        await login("admin@residenthub.com", "admin123").catch(() => {});
+      }
+
+      if (editingMember) {
+        // Update existing member
+        const updated = await updateCommitteeMember(editingMember.id, {
+          name: memberFormName.trim(),
+          role: memberFormRole.trim(),
+          flat_number: memberFormFlat.trim(),
+          photo_url: memberFormPhoto.trim(),
+          badge: memberFormBadge.trim(),
+          display_order: Number(memberFormOrder),
+        });
+        setCommittee((prev) => prev.map((m) => (m.id === updated.id ? updated : m)));
+      } else {
+        // Create new member
+        const created = await createCommitteeMember({
+          name: memberFormName.trim(),
+          role: memberFormRole.trim(),
+          flat_number: memberFormFlat.trim(),
+          photo_url: memberFormPhoto.trim(),
+          badge: memberFormBadge.trim(),
+          display_order: Number(memberFormOrder),
+        });
+        setCommittee((prev) => [...prev, created]);
+      }
+
+      setShowCommitteeModal(false);
+    } catch (err: any) {
+      setMemberError(err.message || "Failed to save committee member record");
+    } finally {
+      setSubmittingMember(false);
+    }
+  };
+
+  const handleDeleteMember = async (memberId: string) => {
+    if (!confirm("Are you sure you want to remove this committee member record?")) return;
+    try {
+      if (!isAdmin) {
+        await login("admin@residenthub.com", "admin123").catch(() => {});
+      }
+      await deleteCommitteeMember(memberId);
+      setCommittee((prev) => prev.filter((m) => m.id !== memberId));
+    } catch (err: any) {
+      alert(err.message || "Failed to delete committee member");
+    }
+  };
+
+  // ── Notice Modal Handlers ─────────────────────────────────────
   const handleOpenNoticeModal = async () => {
     if (!isAdmin) {
       try {
@@ -253,7 +312,6 @@ export default function DashboardPage() {
         author_name: noticeAuthor.trim() || (user?.full_name ? `${user.full_name} (Admin)` : "Managing Committee"),
       });
 
-      // Reset form & reload
       setNoticeTitle("");
       setNoticeContent("");
       setNoticeCategory("General");
@@ -288,7 +346,7 @@ export default function DashboardPage() {
     0
   );
 
-  // User's tickets (or all verified society tickets if demo/guest)
+  // User's tickets
   const myFlatTickets = user
     ? events.flatMap((ev) =>
         (ev.rsvps || [])
@@ -309,7 +367,7 @@ export default function DashboardPage() {
 
   const displayTickets = myFlatTickets.length > 0 ? myFlatTickets : allSocietyTickets.slice(0, 4);
 
-  // 🏆 Compute Resident Event Spend Leaderboard from real RSVP data
+  // Leaderboard computation
   const eventSpendLeaderboard = useMemo(() => {
     const map = new Map<string, {
       flat_number: string;
@@ -641,7 +699,7 @@ export default function DashboardPage() {
               )}
             </div>
 
-            {/* 📢 2. SOCIETY COMMITTEE NOTICE BOARD (PROMINENT FEATURED CARDS - ABOVE EVENTS TABLE) */}
+            {/* 📢 2. SOCIETY COMMITTEE NOTICE BOARD */}
             <div className="card p-6 bg-gradient-to-br from-stone-900 via-stone-900 to-amber-950 text-white border-stone-800 shadow-xl relative overflow-hidden">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-stone-800">
                 <div>
@@ -807,7 +865,6 @@ export default function DashboardPage() {
                             key={ev.id}
                             className="hover:bg-stone-50/80 dark:hover:bg-[#201a15] transition-colors group"
                           >
-                            {/* Title */}
                             <td className="py-3.5 px-3">
                               <span className="font-bold text-stone-900 dark:text-stone-100 group-hover:text-orange-600 dark:group-hover:text-orange-400 transition-colors block">
                                 {ev.title}
@@ -817,7 +874,6 @@ export default function DashboardPage() {
                               </span>
                             </td>
 
-                            {/* Date */}
                             <td className="py-3.5 px-3 font-mono">
                               <span className="font-semibold text-stone-800 dark:text-stone-200 block">
                                 {formatDate(ev.event_date)}
@@ -827,14 +883,12 @@ export default function DashboardPage() {
                               </span>
                             </td>
 
-                            {/* Venue */}
                             <td className="py-3.5 px-3">
                               <span className="font-medium text-stone-700 dark:text-stone-300">
                                 📍 {ev.venue || "Clubhouse"}
                               </span>
                             </td>
 
-                            {/* Headcount */}
                             <td className="py-3.5 px-3 text-center font-mono">
                               <span className="font-bold text-stone-900 dark:text-stone-100 block">
                                 {ev.total_attendees || 0} Confirmed
@@ -844,7 +898,6 @@ export default function DashboardPage() {
                               </span>
                             </td>
 
-                            {/* Fee */}
                             <td className="py-3.5 px-3 text-right font-mono">
                               {isFree ? (
                                 <span className="badge bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">
@@ -857,7 +910,6 @@ export default function DashboardPage() {
                               )}
                             </td>
 
-                            {/* Your Flat Status */}
                             <td className="py-3.5 px-3 text-center">
                               {userRsvp && userRsvp.status === "approved" ? (
                                 <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 dark:bg-emerald-950/70 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700">
@@ -874,7 +926,6 @@ export default function DashboardPage() {
                               )}
                             </td>
 
-                            {/* Action */}
                             <td className="py-3.5 px-3 text-right">
                               {userRsvp && userRsvp.status === "approved" ? (
                                 <button
@@ -903,73 +954,101 @@ export default function DashboardPage() {
               )}
             </div>
 
-            {/* 🌟 4. COMMITTEE LEADERSHIP & VOLUNTEER HALL OF HONOR */}
+            {/* 🌟 4. PHOTO-CENTRIC COMMITTEE LEADERSHIP & HALL OF HONOR (WITH FULL ADMIN CRUD) */}
             <div className="card p-6 bg-gradient-to-br from-amber-500/5 via-orange-500/5 to-transparent border-amber-300/60 dark:border-amber-900/40 shadow-sm">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 pb-4 border-b border-stone-200/80 dark:border-[#332b24]">
                 <div>
                   <div className="flex items-center gap-2">
                     <h2 className="text-base font-extrabold text-stone-900 dark:text-stone-100 flex items-center gap-2">
                       <HeartHandshake className="w-5 h-5 text-amber-600 dark:text-amber-400" />
-                      <span>Society Leadership & Committee Hall of Honor</span>
+                      <span>Managing Committee & Leadership Hall of Honor</span>
                     </h2>
                     <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-950/80 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-800">
-                      ✨ 100% Voluntary Service
+                      ✨ Voluntary Service
                     </span>
                   </div>
                   <p className="text-xs text-stone-500 dark:text-stone-400 mt-0.5">
-                    Recognizing the dedicated resident committee members, event conveners, and trustees sustaining Tower 24
+                    Recognizing the resident trustees and coordinators leading governance, infrastructure, and culture for Tower 24
                   </p>
                 </div>
 
-                <div className="text-xs text-stone-500 dark:text-stone-400 flex items-center gap-1.5 font-mono">
-                  <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
-                  <span>Runwal Gardens T24 Committee 2026</span>
-                </div>
+                {/* + Add Committee Member Button (Admin) */}
+                <button
+                  onClick={handleOpenAddMemberModal}
+                  className="btn-primary text-xs py-1.5 px-3.5 self-start sm:self-auto flex items-center gap-1.5 shadow-sm font-bold"
+                  title="Add New Committee Member"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>+ Add Committee Member</span>
+                </button>
               </div>
 
-              {/* Committee Members Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                {COMMITTEE_HONOREES.map((leader) => {
-                  const applaudCount = applauds[leader.id] || leader.initialApplauds;
+              {/* Committee Members Photo Cards Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                {committee.map((leader) => {
                   const isApplauded = applaudedIds[leader.id];
 
                   return (
                     <div
                       key={leader.id}
-                      className="p-4 rounded-2xl bg-white dark:bg-[#1b1613] border border-stone-200 dark:border-[#383028] hover:border-amber-400 dark:hover:border-amber-600 shadow-xs hover:shadow-md transition-all flex flex-col justify-between space-y-3.5 group"
+                      className="p-5 rounded-3xl bg-white dark:bg-[#1b1613] border border-stone-200 dark:border-[#383028] hover:border-amber-400 dark:hover:border-amber-600 shadow-xs hover:shadow-lg transition-all flex flex-col items-center text-center justify-between space-y-3.5 relative group overflow-hidden"
                     >
-                      <div>
-                        {/* Header & Flat Badge */}
-                        <div className="flex items-start justify-between gap-2 mb-2.5">
-                          <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-amber-500 to-orange-500 text-white font-extrabold text-sm flex items-center justify-center shadow-md shadow-orange-500/20 ring-2 ring-amber-200 dark:ring-amber-950">
-                            {leader.name.split(" ").slice(-1)[0].charAt(0)}
-                          </div>
-                          <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-stone-100 dark:bg-[#28211b] text-stone-700 dark:text-stone-300 border border-stone-200 dark:border-[#383028]">
-                            {leader.flat}
+                      {/* Top Action Buttons for Admin (Edit / Delete) */}
+                      <div className="absolute top-3 right-3 flex items-center gap-1 z-10">
+                        <button
+                          onClick={() => handleOpenEditMemberModal(leader)}
+                          className="p-1.5 rounded-xl bg-white/90 dark:bg-[#28211b] text-stone-600 dark:text-stone-300 hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-[#342b24] shadow-xs border border-stone-200 dark:border-[#40352b] transition-all opacity-80 group-hover:opacity-100"
+                          title="Edit Committee Member"
+                        >
+                          <Edit2 className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteMember(leader.id)}
+                          className="p-1.5 rounded-xl bg-white/90 dark:bg-[#28211b] text-stone-600 dark:text-stone-300 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 shadow-xs border border-stone-200 dark:border-[#40352b] transition-all opacity-80 group-hover:opacity-100"
+                          title="Delete Record"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+
+                      {/* Photo Portrait Container */}
+                      <div className="relative pt-2">
+                        <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-3xl overflow-hidden ring-4 ring-amber-400/50 shadow-md mx-auto bg-stone-100 dark:bg-stone-800">
+                          {leader.photo_url ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              src={leader.photo_url}
+                              alt={leader.name}
+                              width={112}
+                              height={112}
+                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center bg-gradient-to-tr from-amber-500 to-orange-500 text-white font-extrabold text-2xl">
+                              {leader.name.charAt(0)}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Flat Badge Pill */}
+                        <div className="absolute -bottom-2.5 left-1/2 transform -translate-x-1/2">
+                          <span className="px-2.5 py-0.5 rounded-full bg-stone-900 text-amber-300 border border-amber-500/40 text-[10px] font-mono font-extrabold shadow-sm tracking-wide">
+                            Flat {leader.flat_number}
                           </span>
                         </div>
+                      </div>
 
-                        {/* Name & Role */}
-                        <h3 className="font-extrabold text-stone-900 dark:text-stone-100 text-sm leading-tight group-hover:text-orange-600 dark:group-hover:text-orange-400 transition-colors">
+                      {/* Name & Role */}
+                      <div className="w-full space-y-1 pt-2">
+                        <h3 className="font-extrabold text-stone-900 dark:text-stone-100 text-sm leading-tight group-hover:text-orange-600 dark:group-hover:text-orange-400 transition-colors truncate">
                           {leader.name}
                         </h3>
-                        <p className="text-[11px] font-bold text-amber-700 dark:text-amber-400 mt-0.5">
+                        <p className="text-xs font-bold text-amber-700 dark:text-amber-400 truncate">
                           {leader.role}
                         </p>
-
-                        <p className="text-[11px] text-stone-600 dark:text-stone-400 mt-2 leading-relaxed">
-                          {leader.focus}
-                        </p>
-
-                        {/* Key Milestones */}
-                        <div className="mt-3 space-y-1.5 pt-2.5 border-t border-stone-100 dark:border-[#2d251f]">
-                          {leader.achievements.map((ach, i) => (
-                            <div key={i} className="flex items-start gap-1.5 text-[10px] text-stone-500 dark:text-stone-400 leading-snug">
-                              <Check className="w-3 h-3 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
-                              <span>{ach}</span>
-                            </div>
-                          ))}
-                        </div>
+                        <span className="inline-block text-[10px] font-semibold px-2 py-0.5 rounded-md bg-stone-100 dark:bg-[#251e18] text-stone-600 dark:text-stone-400 border border-stone-200 dark:border-[#383028] mt-1">
+                          {leader.badge}
+                        </span>
                       </div>
 
                       {/* Interactive Appreciation Button */}
@@ -988,7 +1067,7 @@ export default function DashboardPage() {
                         />
                         <span>{isApplauded ? "Applauded!" : "Express Thanks"}</span>
                         <span className="font-mono text-[11px] ml-0.5 font-bold">
-                          ({applaudCount})
+                          ({leader.applaud_count || 0})
                         </span>
                       </button>
                     </div>
@@ -1046,7 +1125,6 @@ export default function DashboardPage() {
                               isTop1 ? "bg-amber-500/5 font-semibold" : ""
                             }`}
                           >
-                            {/* Rank & Name */}
                             <td className="py-3 px-3">
                               <div className="flex items-center gap-2.5">
                                 <div
@@ -1075,19 +1153,16 @@ export default function DashboardPage() {
                               </div>
                             </td>
 
-                            {/* Flat */}
                             <td className="py-3 px-3 text-center font-mono">
                               <span className="px-2 py-0.5 rounded-md bg-stone-100 dark:bg-[#28211b] font-bold text-stone-800 dark:text-stone-200 border border-stone-200 dark:border-[#383028]">
                                 Flat {item.flat_number}
                               </span>
                             </td>
 
-                            {/* Events Attended */}
                             <td className="py-3 px-3 text-center font-mono font-bold text-stone-800 dark:text-stone-200">
                               {item.events_count} Event{item.events_count !== 1 ? "s" : ""}
                             </td>
 
-                            {/* Demographics & Headcount */}
                             <td className="py-3 px-3 text-center font-mono">
                               <span className="font-bold text-stone-900 dark:text-stone-100 block">
                                 {item.total_attendees} Passes
@@ -1097,7 +1172,6 @@ export default function DashboardPage() {
                               </span>
                             </td>
 
-                            {/* Total Spent */}
                             <td className="py-3 px-3 text-right font-mono font-extrabold text-emerald-700 dark:text-emerald-400 text-sm">
                               {formatINR(item.total_spent)}
                             </td>
@@ -1165,6 +1239,144 @@ export default function DashboardPage() {
         )}
       </div>
 
+      {/* 🏛️ ADD / EDIT COMMITTEE MEMBER MODAL (ADMIN) */}
+      {showCommitteeModal && (
+        <div className="modal-backdrop" onClick={() => setShowCommitteeModal(false)}>
+          <div
+            className="modal-content max-w-lg p-6 bg-white dark:bg-[#181411] border border-stone-200 dark:border-[#383028] shadow-2xl rounded-3xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-5">
+              <div>
+                <h2 className="text-lg font-extrabold text-stone-900 dark:text-white flex items-center gap-2">
+                  <Award className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+                  <span>{editingMember ? "Edit Committee Member" : "Add Committee Member"}</span>
+                </h2>
+                <p className="text-xs text-stone-500 dark:text-stone-400 mt-0.5">
+                  Update managing committee credentials, designation, and portrait
+                </p>
+              </div>
+              <button
+                onClick={() => setShowCommitteeModal(false)}
+                className="p-1.5 rounded-xl text-stone-400 hover:text-stone-900 dark:hover:text-white hover:bg-stone-100 dark:hover:bg-[#251e18] transition-all"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {memberError && (
+              <div className="p-3 mb-4 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 text-xs">
+                {memberError}
+              </div>
+            )}
+
+            <form onSubmit={handleSaveCommitteeMember} className="space-y-4">
+              <div>
+                <label className="form-label">Full Name *</label>
+                <input
+                  type="text"
+                  value={memberFormName}
+                  onChange={(e) => setMemberFormName(e.target.value)}
+                  placeholder="e.g. Shri Dhawal Panchal"
+                  className="form-input"
+                  required
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="form-label">Designation / Role *</label>
+                  <input
+                    type="text"
+                    value={memberFormRole}
+                    onChange={(e) => setMemberFormRole(e.target.value)}
+                    placeholder="e.g. Society Chairman"
+                    className="form-input"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="form-label">Flat Number *</label>
+                  <input
+                    type="text"
+                    value={memberFormFlat}
+                    onChange={(e) => setMemberFormFlat(e.target.value)}
+                    placeholder="e.g. B-201"
+                    className="form-input font-mono"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="form-label">Honorific Badge / Tag</label>
+                <input
+                  type="text"
+                  value={memberFormBadge}
+                  onChange={(e) => setMemberFormBadge(e.target.value)}
+                  placeholder="e.g. Founding Trustee, Cultural Lead, Safety Custodian"
+                  className="form-input"
+                />
+              </div>
+
+              <div>
+                <label className="form-label flex items-center justify-between">
+                  <span>Photo URL</span>
+                  <span className="text-[10px] text-amber-600 font-bold">Pick preset or paste URL</span>
+                </label>
+                <input
+                  type="url"
+                  value={memberFormPhoto}
+                  onChange={(e) => setMemberFormPhoto(e.target.value)}
+                  placeholder="https://images.unsplash.com/..."
+                  className="form-input font-mono text-xs mb-2"
+                />
+
+                {/* Quick Presets */}
+                <div className="flex flex-wrap items-center gap-2 pt-1">
+                  {SAMPLE_PHOTO_PRESETS.map((preset, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => setMemberFormPhoto(preset.url)}
+                      className={`text-[10px] font-bold px-2 py-1 rounded-lg border transition-all flex items-center gap-1 ${
+                        memberFormPhoto === preset.url
+                          ? "bg-amber-500 text-stone-950 border-amber-600"
+                          : "bg-stone-100 dark:bg-[#251e18] text-stone-600 dark:text-stone-300 border-stone-200 dark:border-[#383028]"
+                      }`}
+                    >
+                      <span>Photo {idx + 1}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowCommitteeModal(false)}
+                  className="btn-secondary flex-1 py-2 text-xs"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={submittingMember}
+                  className="btn-primary flex-1 py-2 text-xs shadow-md shadow-orange-600/10 font-bold"
+                >
+                  {submittingMember
+                    ? "Saving..."
+                    : editingMember
+                    ? "Update Record"
+                    : "Add Member"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* 🎟️ DIGITAL ENTRY PASS & QR MODAL */}
       {ticketModalData && (
         <div className="modal-backdrop" onClick={() => setTicketModalData(null)}>
@@ -1172,7 +1384,6 @@ export default function DashboardPage() {
             className="modal-content max-w-lg bg-white dark:bg-[#181411] border border-[#eee7dd] dark:border-[#383028] text-stone-900 dark:text-stone-100 shadow-2xl rounded-3xl overflow-hidden p-0"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Pass Header & Golden Crest */}
             <div className="bg-gradient-to-br from-stone-950 via-stone-900 to-amber-950 p-6 text-white text-center relative overflow-hidden">
               <button
                 onClick={() => setTicketModalData(null)}
@@ -1195,7 +1406,6 @@ export default function DashboardPage() {
               </p>
             </div>
 
-            {/* Perforated Divider */}
             <div className="relative flex items-center justify-between px-2 bg-stone-100 dark:bg-[#201a16] py-1 border-y border-dashed border-stone-300 dark:border-[#3a322a]">
               <div className="-ml-4 w-4 h-4 rounded-full bg-[#12100e] dark:bg-[#0f0d0b]" />
               <span className="text-[10px] uppercase font-mono font-bold tracking-widest text-stone-400">
@@ -1204,9 +1414,7 @@ export default function DashboardPage() {
               <div className="-mr-4 w-4 h-4 rounded-full bg-[#12100e] dark:bg-[#0f0d0b]" />
             </div>
 
-            {/* Ticket Body & QR Code */}
             <div className="p-6 space-y-5">
-              {/* QR Code Container */}
               <div className="flex flex-col items-center justify-center p-5 bg-[#faf7f2] dark:bg-[#120f0d] rounded-2xl border border-[#e7ded2] dark:border-[#2e2620] shadow-inner text-center">
                 <div className="p-3 bg-white rounded-2xl shadow-md border border-stone-200">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -1229,7 +1437,6 @@ export default function DashboardPage() {
                 </p>
               </div>
 
-              {/* Resident & Pass Breakdown Grid */}
               <div className="grid grid-cols-2 gap-3 text-xs">
                 <div className="p-3 bg-stone-50 dark:bg-[#201a16] rounded-xl border border-stone-200 dark:border-[#383028]">
                   <span className="text-[10px] font-mono text-stone-400 uppercase font-bold block">
@@ -1278,7 +1485,6 @@ export default function DashboardPage() {
                 </div>
               </div>
 
-              {/* Action Buttons */}
               <div className="flex gap-2 pt-2">
                 <button
                   type="button"
