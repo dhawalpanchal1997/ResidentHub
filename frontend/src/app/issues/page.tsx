@@ -43,7 +43,7 @@ import {
   Check,
   RotateCcw,
 } from "lucide-react";
-import IssueIntakeBotModal from "@/components/IssueIntakeBotModal";
+import IssueIntakeBotDrawer from "@/components/IssueIntakeBotDrawer";
 import AnimatedCounter from "@/components/AnimatedCounter";
 
 const STATUS_TABS = [
@@ -587,8 +587,8 @@ export default function IssuesHelpdeskPage() {
         )}
       </div>
 
-      {/* 🤖 AI ISSUE INTAKE BOT MODAL */}
-      <IssueIntakeBotModal
+      {/* 🤖 AI ISSUE INTAKE BOT RIGHT DRAWER */}
+      <IssueIntakeBotDrawer
         isOpen={showBotModal}
         onClose={() => setShowBotModal(false)}
         onIssueCreated={(newIssue) => {

@@ -21,14 +21,16 @@ import {
   Calendar,
   ChevronRight,
   Check,
+  RotateCcw,
 } from "lucide-react";
 import { createIssue, IssueItem } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
+import Link from "next/link";
 
-interface IssueIntakeBotModalProps {
+interface IssueIntakeBotDrawerProps {
   isOpen: boolean;
   onClose: () => void;
-  onIssueCreated: (newIssue: IssueItem) => void;
+  onIssueCreated?: (newIssue: IssueItem) => void;
 }
 
 interface ChatMessage {
@@ -73,11 +75,11 @@ const TIME_SLOTS = [
   { label: "Weekend Slot", value: "Weekend (Saturday/Sunday)" },
 ];
 
-export default function IssueIntakeBotModal({
+export default function IssueIntakeBotDrawer({
   isOpen,
   onClose,
   onIssueCreated,
-}: IssueIntakeBotModalProps) {
+}: IssueIntakeBotDrawerProps) {
   const { user } = useAuth();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [step, setStep] = useState<number>(0);
@@ -102,13 +104,13 @@ export default function IssueIntakeBotModal({
   };
 
   useEffect(() => {
-    scrollToBottom();
-  }, [messages, isTyping]);
+    if (isOpen) {
+      scrollToBottom();
+    }
+  }, [messages, isTyping, isOpen]);
 
-  // Initialize bot conversation on modal open
-  useEffect(() => {
-    if (!isOpen) return;
-
+  // Reset & start conversation
+  const resetConversation = () => {
     setStep(0);
     setCategory("");
     setLocation("");
@@ -120,7 +122,6 @@ export default function IssueIntakeBotModal({
     setCreatedIssue(null);
 
     const userName = user?.full_name?.split(" ")[0] || "Resident";
-    const userFlat = user?.flat_number || "B-201";
 
     setMessages([
       {
@@ -137,6 +138,12 @@ export default function IssueIntakeBotModal({
         quickReplies: CATEGORIES,
       },
     ]);
+  };
+
+  useEffect(() => {
+    if (isOpen && messages.length === 0) {
+      resetConversation();
+    }
   }, [isOpen, user]);
 
   const addBotMessage = (text: string, quickReplies?: any[]) => {
@@ -153,7 +160,7 @@ export default function IssueIntakeBotModal({
           quickReplies,
         },
       ]);
-    }, 600);
+    }, 500);
   };
 
   const addUserMessage = (text: string) => {
@@ -209,9 +216,7 @@ export default function IssueIntakeBotModal({
     setInputText("");
 
     if (step === 3) {
-      // User entered the issue description
       setDescription(text);
-      // Auto-generate concise title from description
       const generatedTitle = text.length > 55 ? `${text.slice(0, 52)}...` : text;
       setTitle(generatedTitle);
       addUserMessage(text);
@@ -227,7 +232,6 @@ export default function IssueIntakeBotModal({
       setStep(5);
       showSummary(text);
     } else if (step === 5) {
-      // General chat fallback
       addUserMessage(text);
       addBotMessage("Please click the 'Confirm & Log Ticket' button above to register your official ticket with the managing committee.");
     }
@@ -262,7 +266,9 @@ export default function IssueIntakeBotModal({
 
       const newIssue = await createIssue(payload);
       setCreatedIssue(newIssue);
-      onIssueCreated(newIssue);
+      if (onIssueCreated) {
+        onIssueCreated(newIssue);
+      }
 
       addBotMessage(
         `🎉 **Ticket #${newIssue.ticket_number} Registered Successfully!**\n\nThe managing committee and verified service team have been notified. You can track live updates in the Issues Helpdesk.`
@@ -274,15 +280,23 @@ export default function IssueIntakeBotModal({
     }
   };
 
-  if (!isOpen) return null;
-
   return (
-    <div className="modal-backdrop" onClick={onClose}>
+    <>
+      {/* Frosted Backdrop Overlay */}
       <div
-        className="modal-content max-w-xl p-0 bg-white dark:bg-[#151210] border border-stone-200 dark:border-[#383028] shadow-2xl rounded-3xl overflow-hidden flex flex-col h-[650px] max-h-[90vh]"
-        onClick={(e) => e.stopPropagation()}
+        className={`fixed inset-0 bg-stone-950/40 backdrop-blur-xs z-50 transition-opacity duration-300 ${
+          isOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+        }`}
+        onClick={onClose}
+      />
+
+      {/* Slide-in Right Drawer Panel */}
+      <div
+        className={`fixed top-0 right-0 bottom-0 w-full sm:w-[480px] md:w-[520px] bg-white/95 dark:bg-[#151210]/95 backdrop-blur-2xl border-l border-stone-200/90 dark:border-[#383028] shadow-2xl z-50 flex flex-col transition-transform duration-300 ease-out transform ${
+          isOpen ? "translate-x-0" : "translate-x-full"
+        }`}
       >
-        {/* Header */}
+        {/* Drawer Header */}
         <div className="p-4 bg-gradient-to-r from-stone-900 via-stone-900 to-amber-950 text-white flex items-center justify-between border-b border-stone-800 shrink-0">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-amber-500 to-orange-500 flex items-center justify-center text-white shadow-md">
@@ -296,18 +310,27 @@ export default function IssueIntakeBotModal({
                 </h3>
               </div>
               <p className="text-[11px] text-stone-300">
-                Interactive Maintenance & Helpdesk Intake • Tower 24
+                Interactive Issue Intake & Helpdesk • Tower 24
               </p>
             </div>
           </div>
 
-          <button
-            onClick={onClose}
-            className="p-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-stone-300 hover:text-white transition-all"
-            title="Close Assistant"
-          >
-            <X className="w-5 h-5" />
-          </button>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={resetConversation}
+              className="p-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-stone-300 hover:text-white transition-all"
+              title="Reset Conversation"
+            >
+              <RotateCcw className="w-4 h-4" />
+            </button>
+            <button
+              onClick={onClose}
+              className="p-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-stone-300 hover:text-white transition-all"
+              title="Close Right Panel"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
         {/* Chat Message Scroll Area */}
@@ -350,7 +373,7 @@ export default function IssueIntakeBotModal({
                     </span>
                   </div>
 
-                  {/* Interactive Quick-Reply Chips for Bot messages */}
+                  {/* Interactive Quick-Reply Chips */}
                   {isBot && m.quickReplies && m.quickReplies.length > 0 && !createdIssue && (
                     <div className="flex flex-wrap gap-1.5 pt-1">
                       {m.quickReplies.map((reply, idx) => (
@@ -390,7 +413,7 @@ export default function IssueIntakeBotModal({
             </div>
           )}
 
-          {/* Summary Confirmation Card (When all steps complete) */}
+          {/* Summary Confirmation Card */}
           {step === 5 && !createdIssue && (
             <div className="p-4 rounded-2xl bg-white dark:bg-[#1c1714] border border-amber-300 dark:border-amber-800 shadow-md space-y-3 mt-3">
               <div className="flex items-center justify-between border-b border-stone-100 dark:border-[#332a22] pb-2">
@@ -433,9 +456,9 @@ export default function IssueIntakeBotModal({
             </div>
           )}
 
-          {/* Success Card when Issue Created */}
+          {/* Success Card */}
           {createdIssue && (
-            <div className="p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-700 text-emerald-900 dark:text-emerald-200 space-y-2 mt-3">
+            <div className="p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-700 text-emerald-900 dark:text-emerald-200 space-y-2.5 mt-3">
               <div className="flex items-center gap-2">
                 <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
                 <div>
@@ -445,12 +468,23 @@ export default function IssueIntakeBotModal({
                   </p>
                 </div>
               </div>
-              <button
-                onClick={onClose}
-                className="btn-primary w-full py-2 text-xs mt-2"
-              >
-                View in Issues Helpdesk
-              </button>
+              <div className="flex gap-2 pt-1">
+                <Link
+                  href="/issues"
+                  onClick={onClose}
+                  className="btn-primary flex-1 py-2 text-xs text-center flex items-center justify-center gap-1"
+                >
+                  <span>Track in Helpdesk</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </Link>
+                <button
+                  type="button"
+                  onClick={resetConversation}
+                  className="btn-secondary flex-1 py-2 text-xs"
+                >
+                  Log Another Issue
+                </button>
+              </div>
             </div>
           )}
 
@@ -486,6 +520,6 @@ export default function IssueIntakeBotModal({
           </button>
         </form>
       </div>
-    </div>
+    </>
   );
 }
