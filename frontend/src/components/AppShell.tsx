@@ -140,8 +140,6 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   };
 
   const handleQuickLogin = async (demoEmail: string, demoPass: string) => {
-    setEmail(demoEmail);
-    setPassword(demoPass);
     setAuthError("");
     setAuthLoading(true);
     try {
@@ -611,7 +609,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
               </div>
             )}
 
-            <form onSubmit={handleSubmit} className="space-y-3.5">
+            <form onSubmit={handleSubmit} className="space-y-3.5" autoComplete="off" data-lpignore="true">
               {authMode === "signup" && (
                 <>
                   <div>
@@ -686,7 +684,8 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                 <input
                   type="email"
                   name="email"
-                  autoComplete="username"
+                  autoComplete="off"
+                  data-lpignore="true"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="resident@residenthub.local"
@@ -700,7 +699,9 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                 <input
                   type="password"
                   name="password"
-                  autoComplete={authMode === "login" ? "current-password" : "new-password"}
+                  autoComplete="new-password"
+                  data-lpignore="true"
+                  data-1p-ignore="true"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
