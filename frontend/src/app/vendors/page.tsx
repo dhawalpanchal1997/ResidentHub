@@ -157,7 +157,7 @@ export default function VendorsPage() {
           <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
             Verified Vendor Directory
           </h1>
-          <p className="text-sm text-slate-500 mt-1">
+          <p className="text-sm text-slate-700 font-medium mt-1">
             Community-rated electricians, plumbers, emergency contacts, and trusted contractors
           </p>
         </div>

@@ -10,7 +10,7 @@ export default function FestiveBackgroundPattern() {
       aria-hidden="true"
     >
       {/* Realistic Indian Society & Community Life Backdrop Artwork */}
-      <div className="absolute inset-0 opacity-[0.14] mix-blend-multiply transition-opacity duration-1000 scale-[1.02]">
+      <div className="absolute inset-0 opacity-[0.22] mix-blend-multiply transition-opacity duration-1000">
         <Image
           src="/society-backdrop.jpg"
           alt="ResidentHub Society Scenery"
@@ -20,9 +20,8 @@ export default function FestiveBackgroundPattern() {
         />
       </div>
 
-      {/* Ambient gradient fade to keep content area crisp and readable */}
-      <div className="absolute inset-0 bg-gradient-to-t from-[#faf7f2]/60 via-transparent to-[#faf7f2]/80" />
-      <div className="absolute inset-0 bg-gradient-to-r from-[#faf7f2]/50 via-transparent to-[#faf7f2]/50" />
+      {/* Subtle soft bottom fade so the cards blend cleanly */}
+      <div className="absolute inset-0 bg-gradient-to-b from-[#faf7f2]/30 via-transparent to-[#faf7f2]/50 pointer-events-none" />
     </div>
   );
 }

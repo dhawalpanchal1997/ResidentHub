@@ -225,7 +225,7 @@ export default function LedgerPage() {
           <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
             Financial Ledger & AI Reconciliation
           </h1>
-          <p className="text-sm text-slate-500 mt-1">
+          <p className="text-sm text-slate-700 font-medium mt-1">
             Complete transparent audit trail of society maintenance, utilities, and event budgets
           </p>
         </div>

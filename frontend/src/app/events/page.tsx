@@ -389,9 +389,9 @@ export default function EventsPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-            Events & RSVPs
+            Events & Utsavs
           </h1>
-          <p className="text-sm text-slate-500 mt-1">
+          <p className="text-sm text-slate-700 font-medium mt-1">
             Discover society celebrations, RSVP with demographic headcount, and track live budgets
           </p>
         </div>
