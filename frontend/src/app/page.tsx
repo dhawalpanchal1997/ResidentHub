@@ -232,7 +232,7 @@ export default function DashboardPage() {
           icon: "🎉",
           tag: "UPCOMING EVENT",
           tagClass: "bg-purple-500/20 text-purple-300 border-purple-500/40",
-          title: ev.name,
+          title: ev.title,
           detail: `${formatDate(ev.event_date)} at ${ev.venue} (${ev.rsvps?.length || 0} RSVPs)`,
           link: "/events",
         });

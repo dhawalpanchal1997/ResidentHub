@@ -26,6 +26,7 @@ import {
   Activity,
   ArrowUpRight,
   ArrowDownRight,
+  ArrowRight,
   Download,
   Filter,
   RefreshCw,
