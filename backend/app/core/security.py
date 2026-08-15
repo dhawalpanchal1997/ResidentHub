@@ -62,3 +62,19 @@ async def get_current_admin(user = Depends(get_current_user)):
             detail="Admin privileges required for this action"
         )
     return user
+
+oauth2_scheme_optional = OAuth2PasswordBearer(tokenUrl=f"{settings.API_V1_STR}/auth/login", auto_error=False)
+
+async def get_optional_current_user(token: Optional[str] = Depends(oauth2_scheme_optional), db: AsyncSession = Depends(get_db)):
+    if not token:
+        return None
+    try:
+        from app.models.user import User
+        payload = jwt.decode(token, settings.JWT_SECRET, algorithms=[settings.ALGORITHM])
+        user_id: str = payload.get("sub")
+        if not user_id:
+            return None
+        result = await db.execute(select(User).where(User.id == user_id))
+        return result.scalars().first()
+    except Exception:
+        return None

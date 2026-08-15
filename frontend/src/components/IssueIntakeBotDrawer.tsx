@@ -243,13 +243,17 @@ export default function IssueIntakeBotDrawer({
       setTitle(generatedTitle);
       setDescription(text);
 
-      const verificationResult = await verifyIssueDuplicate({
+      const payload = {
         title: generatedTitle,
         description: text,
-        category,
-        location,
-        flat_number: user?.flat_number || "B-201",
-      });
+        category: category || "General",
+        location: location || (user?.flat_number ? `Flat ${user.flat_number}` : "Common Area"),
+        flat_number: user?.flat_number || "A-402",
+      };
+
+      console.log("[ResidentBot] Requesting AI Duplicate Verification:", payload);
+      const verificationResult = await verifyIssueDuplicate(payload);
+      console.log("[ResidentBot] AI Duplicate Verification Result:", verificationResult);
 
       setIsCheckingAi(false);
 
@@ -270,6 +274,7 @@ export default function IssueIntakeBotDrawer({
         TIME_SLOTS
       );
     } catch (err) {
+      console.error("[ResidentBot] Error in AI duplicate check:", err);
       setIsCheckingAi(false);
       setStep(4);
       addBotMessage(

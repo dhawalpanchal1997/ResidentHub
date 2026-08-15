@@ -994,6 +994,8 @@ export async function verifyIssueDuplicate(payload: {
     body: JSON.stringify(payload),
   });
   if (!res.ok) {
+    const errorText = await res.text().catch(() => "");
+    console.warn(`[verifyIssueDuplicate] API failed with HTTP ${res.status}:`, errorText);
     return {
       is_duplicate: false,
       confidence: "none",

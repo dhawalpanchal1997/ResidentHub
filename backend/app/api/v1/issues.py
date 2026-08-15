@@ -7,7 +7,7 @@ from sqlalchemy.future import select
 from sqlalchemy.orm import selectinload
 
 from app.core.database import get_db
-from app.core.security import get_current_user, get_current_admin
+from app.core.security import get_current_user, get_current_admin, get_optional_current_user
 from app.models.user import User
 from app.models.issue import Issue, IssueActivity
 from app.schemas.issue import (
@@ -224,7 +224,7 @@ async def get_issues(
 async def verify_duplicate_issue(
     payload: IssueDuplicateCheckRequest,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: Optional[User] = Depends(get_optional_current_user)
 ):
     await _ensure_seed_issues(db)
     
@@ -250,12 +250,14 @@ async def verify_duplicate_issue(
         for i in active_issues
     ]
     
+    user_flat = payload.flat_number or (current_user.flat_number if current_user else "B-201")
+    
     res = await verify_issue_duplicate_with_llm(
         title=payload.title,
         description=payload.description,
         category=payload.category,
         location=payload.location,
-        flat_number=payload.flat_number or current_user.flat_number,
+        flat_number=user_flat,
         active_issues=active_dicts
     )
     
