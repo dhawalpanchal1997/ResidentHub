@@ -16,24 +16,14 @@ import {
   Home,
   X,
   Menu,
-  Mail,
-  Lock,
-  User as UserIcon,
-  Phone,
   Sparkles,
-  ChevronRight,
-  Receipt,
-  Bell,
-  Search,
-  CheckCircle,
-  Zap,
 } from "lucide-react";
 
 const NAV_ITEMS = [
   { href: "/", label: "Dashboard", icon: Home, badge: null },
-  { href: "/events", label: "Events & RSVPs", icon: Calendar, badge: "Tiered" },
+  { href: "/events", label: "Events & Utsavs", icon: Calendar, badge: "Tiered" },
   { href: "/ledger", label: "Financial Ledger", icon: DollarSign, badge: "AI Sync" },
-  { href: "/vendors", label: "Vendor Directory", icon: Users, badge: null },
+  { href: "/vendors", label: "Verified Vendors", icon: Users, badge: null },
 ];
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
@@ -98,50 +88,50 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-900">
+      <div className="min-h-screen flex items-center justify-center bg-stone-950">
         <div className="text-center">
-          <div className="w-12 h-12 border-3 border-emerald-500/20 border-t-emerald-500 rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-slate-400 text-sm font-medium">Initializing ResidentHub...</p>
+          <div className="w-12 h-12 border-3 border-amber-500/20 border-t-amber-500 rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-amber-200/80 text-sm font-medium">Namaste! Loading ResidentHub...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex bg-slate-50/80">
+    <div className="min-h-screen flex bg-[#faf7f2]">
       {/* Mobile sidebar overlay */}
       {sidebarOpen && (
-        <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-40 lg:hidden" onClick={() => setSidebarOpen(false)} />
+        <div className="fixed inset-0 bg-stone-950/70 backdrop-blur-sm z-40 lg:hidden" onClick={() => setSidebarOpen(false)} />
       )}
 
-      {/* Modern Sidebar */}
+      {/* Modern Sidebar with Indian Multicultural Accents */}
       <aside
-        className={`fixed lg:sticky top-0 left-0 z-50 lg:z-auto h-screen w-[270px] bg-slate-950 text-slate-200 flex flex-col transition-transform duration-300 lg:translate-x-0 border-r border-slate-800/80 shrink-0 ${
+        className={`fixed lg:sticky top-0 left-0 z-50 lg:z-auto h-screen w-[270px] bg-stone-950 text-stone-200 flex flex-col transition-transform duration-300 lg:translate-x-0 border-r border-stone-800 shrink-0 ${
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
         {/* Brand Header */}
-        <div className="p-5 border-b border-slate-800/70">
+        <div className="p-5 border-b border-stone-800">
           <div className="flex items-center justify-between">
             <Link href="/" className="flex items-center gap-3 group">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-400 flex items-center justify-center shadow-lg shadow-emerald-500/20 group-hover:scale-105 transition-all">
-                <Building2 className="w-5 h-5 text-white" />
+              <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-orange-600 via-amber-500 to-yellow-400 flex items-center justify-center shadow-lg shadow-orange-600/30 group-hover:scale-105 transition-all text-white">
+                <span className="text-lg">🪔</span>
               </div>
               <div>
                 <h1 className="text-base font-bold text-white tracking-tight flex items-center gap-1.5">
                   ResidentHub
-                  <span className="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 font-semibold border border-emerald-500/30">
-                    V1.0
+                  <span className="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-400 font-semibold border border-amber-500/30">
+                    CHS
                   </span>
                 </h1>
-                <p className="text-[11px] text-slate-400 font-medium truncate max-w-[140px]">
+                <p className="text-[11px] text-amber-200/70 font-medium truncate max-w-[140px]">
                   Runwal Gardens T24
                 </p>
               </div>
             </Link>
             <button
               onClick={() => setSidebarOpen(false)}
-              className="lg:hidden p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800"
+              className="lg:hidden p-1.5 rounded-lg text-stone-400 hover:text-white hover:bg-stone-800"
             >
               <X className="w-5 h-5" />
             </button>
@@ -150,8 +140,9 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
         {/* Navigation Menu */}
         <nav className="flex-1 px-3.5 py-5 space-y-1.5 overflow-y-auto">
-          <div className="px-3 pb-2 text-[10px] font-bold text-slate-400 uppercase tracking-wider font-mono">
-            Main Modules
+          <div className="px-3 pb-2 text-[10px] font-bold text-stone-400 uppercase tracking-wider font-mono flex items-center justify-between">
+            <span>Society Modules</span>
+            <span className="text-[10px] text-amber-400">✨ 96 Flats</span>
           </div>
           {NAV_ITEMS.map((item) => {
             const Icon = item.icon;
@@ -161,19 +152,19 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                 key={item.href}
                 href={item.href}
                 onClick={() => setSidebarOpen(false)}
-                className={`flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all ${
+                className={`flex items-center justify-between px-3.5 py-2.5 rounded-2xl text-sm font-semibold transition-all ${
                   active
-                    ? "bg-emerald-500/10 text-emerald-400 font-semibold border border-emerald-500/20 shadow-sm"
-                    : "text-slate-400 hover:text-slate-100 hover:bg-slate-900"
+                    ? "bg-gradient-to-r from-orange-500/20 to-amber-500/10 text-amber-300 border border-amber-500/30 shadow-sm"
+                    : "text-stone-400 hover:text-stone-100 hover:bg-stone-900"
                 }`}
               >
                 <div className="flex items-center gap-3">
-                  <Icon className={`w-4 h-4 ${active ? "text-emerald-400" : "text-slate-400"}`} />
+                  <Icon className={`w-4 h-4 ${active ? "text-amber-400" : "text-stone-400"}`} />
                   <span>{item.label}</span>
                 </div>
                 {item.badge && (
                   <span className={`text-[10px] font-mono font-bold px-1.5 py-0.5 rounded ${
-                    active ? "bg-emerald-500/20 text-emerald-300" : "bg-slate-800 text-slate-400"
+                    active ? "bg-amber-500/20 text-amber-300" : "bg-stone-800 text-stone-400"
                   }`}>
                     {item.badge}
                   </span>
@@ -183,21 +174,21 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           })}
         </nav>
 
-        {/* Sidebar Footer — User Status / Login */}
-        <div className="p-4 border-t border-slate-800/80 bg-slate-950/60">
+        {/* Sidebar Footer — User Status */}
+        <div className="p-4 border-t border-stone-800 bg-stone-950/80">
           {user ? (
             <div className="space-y-3">
-              <div className="flex items-center gap-3 p-2.5 rounded-xl bg-slate-900 border border-slate-800">
-                <div className="w-9 h-9 rounded-xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400 font-bold text-xs shrink-0">
+              <div className="flex items-center gap-3 p-2.5 rounded-2xl bg-stone-900 border border-stone-800">
+                <div className="w-9 h-9 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-300 font-bold text-xs shrink-0">
                   {user.full_name.charAt(0)}
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-xs font-bold text-white truncate">{user.full_name}</p>
-                  <p className="text-[11px] text-slate-400 flex items-center gap-1 mt-0.5">
-                    <span>{user.flat_number}</span>
+                  <p className="text-[11px] text-stone-400 flex items-center gap-1 mt-0.5">
+                    <span>Flat {user.flat_number}</span>
                     <span>•</span>
-                    <span className={`capitalize font-semibold ${user.role === "admin" ? "text-violet-400" : "text-emerald-400"}`}>
-                      {user.role}
+                    <span className={`capitalize font-semibold ${user.role === "admin" ? "text-orange-400" : "text-amber-400"}`}>
+                      {user.role === "admin" ? "Committee" : "Resident"}
                     </span>
                   </p>
                 </div>
@@ -205,7 +196,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
               <button
                 onClick={logout}
-                className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs font-medium text-slate-400 hover:text-red-400 hover:bg-red-500/10 border border-slate-800 hover:border-red-500/20 transition-all"
+                className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs font-medium text-stone-400 hover:text-rose-400 hover:bg-rose-500/10 border border-stone-800 hover:border-rose-500/20 transition-all"
               >
                 <LogOut className="w-3.5 h-3.5" />
                 Sign Out
@@ -222,10 +213,10 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
               </button>
               <button
                 onClick={() => { setAuthMode("signup"); setShowAuth(true); }}
-                className="w-full flex items-center justify-center gap-1 px-3 py-2 rounded-xl text-xs font-medium text-slate-400 hover:text-white bg-slate-900 border border-slate-800"
+                className="w-full flex items-center justify-center gap-1 px-3 py-2 rounded-xl text-xs font-semibold text-stone-400 hover:text-white bg-stone-900 border border-stone-800"
               >
                 <UserPlus className="w-3.5 h-3.5" />
-                Create Account
+                Register Flat
               </button>
             </div>
           )}
@@ -234,20 +225,22 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0 min-h-screen">
-        {/* Top Context Bar */}
-        <header className="sticky top-0 z-30 h-16 bg-white/85 backdrop-blur-md border-b border-slate-200/80 px-4 sm:px-8 flex items-center justify-between">
+        {/* Top Context Bar with Indian Cultural Tagline */}
+        <header className="sticky top-0 z-30 h-16 bg-[#faf7f2]/90 backdrop-blur-md border-b border-[#eee7dd] px-4 sm:px-8 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <button
               onClick={() => setSidebarOpen(true)}
-              className="lg:hidden p-2 rounded-xl text-slate-600 hover:bg-slate-100"
+              className="lg:hidden p-2 rounded-xl text-stone-700 hover:bg-stone-100"
             >
               <Menu className="w-5 h-5" />
             </button>
             <div className="flex items-center gap-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
-              <span className="text-xs font-bold text-slate-700 hidden sm:inline">Runwal Gardens Tower 24</span>
-              <span className="text-xs text-slate-400 hidden sm:inline">•</span>
-              <span className="text-xs font-medium text-slate-500">Live Society Portal</span>
+              <span className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse" />
+              <span className="text-xs font-bold text-stone-800 hidden sm:inline">Runwal Gardens Tower 24</span>
+              <span className="text-xs text-stone-400 hidden sm:inline">•</span>
+              <span className="text-xs font-semibold text-amber-800 bg-amber-100/80 px-2 py-0.5 rounded-full border border-amber-200">
+                Vasudhaiva Kutumbakam 🪔
+              </span>
             </div>
           </div>
 
@@ -258,7 +251,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                   <Shield className="w-3 h-3 mr-0.5" />
                   {isAdmin ? "Admin Committee" : "Verified Resident"}
                 </span>
-                <span className="text-xs font-bold text-slate-800 hidden md:inline px-2.5 py-1 bg-slate-100 rounded-lg">
+                <span className="text-xs font-bold text-stone-800 hidden md:inline px-2.5 py-1 bg-white border border-[#eee7dd] rounded-xl">
                   Flat {user.flat_number}
                 </span>
               </div>
@@ -286,63 +279,63 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           <div className="modal-content p-6 max-w-md" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-5">
               <div>
-                <h2 className="text-xl font-bold text-slate-900">
-                  {authMode === "login" ? "Welcome Back" : "Register Flat"}
+                <h2 className="text-xl font-bold text-stone-900">
+                  {authMode === "login" ? "Namaste! Welcome Back" : "Register Society Flat"}
                 </h2>
-                <p className="text-xs text-slate-500 mt-0.5">
+                <p className="text-xs text-stone-500 mt-0.5">
                   {authMode === "login"
                     ? "Access society events, payments, and notices"
                     : "Create your resident account to participate in events"}
                 </p>
               </div>
-              <button onClick={() => setShowAuth(false)} className="p-2 rounded-xl hover:bg-slate-100">
-                <X className="w-5 h-5 text-slate-400" />
+              <button onClick={() => setShowAuth(false)} className="p-2 rounded-xl hover:bg-stone-100">
+                <X className="w-5 h-5 text-stone-400" />
               </button>
             </div>
 
             {/* 1-Click Demo Access Shortcuts */}
             {authMode === "login" && (
-              <div className="mb-5 p-3.5 bg-slate-50 rounded-2xl border border-slate-200/90">
-                <p className="text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-2 font-mono flex items-center gap-1.5">
-                  <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
-                  1-Click Demo Accounts
+              <div className="mb-5 p-3.5 bg-stone-50 rounded-2xl border border-stone-200/90">
+                <p className="text-[11px] font-bold text-stone-700 uppercase tracking-wider mb-2 font-mono flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5 text-amber-600" />
+                  1-Click Demo Profiles
                 </p>
                 <div className="grid grid-cols-1 gap-2">
                   <button
                     type="button"
                     onClick={() => handleQuickLogin("admin@residenthub.local", "admin123")}
                     disabled={authLoading}
-                    className="flex items-center justify-between px-3 py-2 rounded-xl bg-white hover:bg-emerald-50 border border-slate-200 hover:border-emerald-300 text-left text-xs font-semibold text-slate-800 transition-all"
+                    className="flex items-center justify-between px-3 py-2 rounded-xl bg-white hover:bg-amber-50 border border-stone-200 hover:border-amber-300 text-left text-xs font-semibold text-stone-800 transition-all"
                   >
                     <div className="flex items-center gap-2">
-                      <span className="w-6 h-6 rounded-lg bg-violet-100 text-violet-700 flex items-center justify-center font-bold text-[10px]">
-                        AD
+                      <span className="w-6 h-6 rounded-lg bg-orange-100 text-orange-700 flex items-center justify-center font-bold text-[10px]">
+                        👑
                       </span>
                       <span>Admin Committee</span>
                     </div>
-                    <span className="text-[10px] text-slate-400 font-mono">admin@residenthub.local</span>
+                    <span className="text-[10px] text-stone-400 font-mono">admin@residenthub.local</span>
                   </button>
 
                   <button
                     type="button"
                     onClick={() => handleQuickLogin("member@residenthub.local", "member123")}
                     disabled={authLoading}
-                    className="flex items-center justify-between px-3 py-2 rounded-xl bg-white hover:bg-emerald-50 border border-slate-200 hover:border-emerald-300 text-left text-xs font-semibold text-slate-800 transition-all"
+                    className="flex items-center justify-between px-3 py-2 rounded-xl bg-white hover:bg-amber-50 border border-stone-200 hover:border-amber-300 text-left text-xs font-semibold text-stone-800 transition-all"
                   >
                     <div className="flex items-center gap-2">
-                      <span className="w-6 h-6 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold text-[10px]">
-                        PP
+                      <span className="w-6 h-6 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center font-bold text-[10px]">
+                        👩
                       </span>
-                      <span>Priya Patel (B-201)</span>
+                      <span>Priya Patel (Flat B-201)</span>
                     </div>
-                    <span className="text-[10px] text-slate-400 font-mono">member@residenthub.local</span>
+                    <span className="text-[10px] text-stone-400 font-mono">member@residenthub.local</span>
                   </button>
                 </div>
               </div>
             )}
 
             {authError && (
-              <div className="mb-4 px-3.5 py-2.5 rounded-xl bg-red-50 text-red-700 border border-red-200 text-xs font-medium">
+              <div className="mb-4 px-3.5 py-2.5 rounded-xl bg-rose-50 text-rose-700 border border-rose-200 text-xs font-medium">
                 {authError}
               </div>
             )}
@@ -356,7 +349,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                       type="text"
                       value={fullName}
                       onChange={(e) => setFullName(e.target.value)}
-                      placeholder="e.g. Amit Deshmukh"
+                      placeholder="e.g. Rajesh Sharma"
                       className="form-input"
                       required
                     />
@@ -416,18 +409,18 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                 disabled={authLoading}
                 className="btn-primary w-full py-2.5 text-sm mt-2"
               >
-                {authLoading ? "Processing..." : authMode === "login" ? "Sign In" : "Register Account"}
+                {authLoading ? "Processing..." : authMode === "login" ? "Sign In" : "Register Flat"}
               </button>
             </form>
 
-            <div className="mt-4 pt-3 border-t border-slate-100 text-center">
+            <div className="mt-4 pt-3 border-t border-stone-100 text-center">
               <button
                 type="button"
                 onClick={() => {
                   setAuthMode(authMode === "login" ? "signup" : "login");
                   setAuthError("");
                 }}
-                className="text-xs text-emerald-600 hover:text-emerald-700 font-semibold"
+                className="text-xs text-orange-600 hover:text-orange-700 font-semibold"
               >
                 {authMode === "login"
                   ? "Don't have an account? Register flat"
