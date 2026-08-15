@@ -15,8 +15,10 @@ class LedgerTransaction(Base):
     transaction_date = Column(Date, default=date.today, nullable=False)
     description = Column(Text, nullable=True)
     receipt_url = Column(Text, nullable=True)
+    statement_id = Column(String(36), ForeignKey("statement_documents.id"), nullable=True)
     logged_by = Column(String(36), ForeignKey("users.id"), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
     # Relationships
     society = relationship("Society", back_populates="ledger_entries")
+    statement = relationship("StatementDocument", backref="ledger_transactions")

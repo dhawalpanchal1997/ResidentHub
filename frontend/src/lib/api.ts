@@ -96,9 +96,32 @@ export interface LedgerItem {
   transaction_date: string;
   description: string;
   receipt_url?: string;
+  statement_id?: string;
   society_id?: string;
   logged_by?: string;
   created_at?: string;
+}
+
+export interface StatementDocumentItem {
+  id: string;
+  society_id?: string;
+  filename: string;
+  file_type: string;
+  file_size: number;
+  uploaded_by?: string;
+  uploader_name?: string;
+  status: string;
+  total_transactions_count: number;
+  total_income_amount: number;
+  total_expense_amount: number;
+  created_at: string;
+  committed_at?: string;
+  raw_content?: string;
+}
+
+export interface StatementDocumentListResponse {
+  total: number;
+  statements: StatementDocumentItem[];
 }
 
 export interface ParsedBankTransaction {
@@ -117,18 +140,25 @@ export interface ParsedBankTransaction {
   match_confidence: "high" | "medium" | "low" | "none";
   match_type?: "rsvp" | "event_expense" | "vendor" | "maintenance" | "general";
   auto_approve_rsvp: boolean;
+  ai_reasoning?: string;
+  is_anomaly?: boolean;
   selected: boolean;
 }
 
 export interface StatementParseResponse {
+  statement_id?: string;
+  filename?: string;
   total_detected: number;
   total_income: number;
   total_expense: number;
   total_rsvps_matched: number;
+  ai_provider?: string;
+  model_used?: string;
   transactions: ParsedBankTransaction[];
 }
 
 export interface StatementCommitResponse {
+  statement_id?: string;
   ledger_entries_created: number;
   rsvps_approved: number;
   total_income_added: number;
@@ -453,26 +483,47 @@ export async function parseStatementFile(file: File): Promise<StatementParseResp
   return res.json();
 }
 
-export async function commitStatementTransactions(transactions: {
-  transaction_date: string;
-  transaction_type: string;
-  amount: number;
-  category: string;
-  description: string;
-  utr_number?: string;
-  matched_rsvp_id?: string;
-  matched_event_id?: string;
-  auto_approve_rsvp?: boolean;
-}[]): Promise<StatementCommitResponse> {
+export async function commitStatementTransactions(
+  transactions: {
+    transaction_date: string;
+    transaction_type: string;
+    amount: number;
+    category: string;
+    description: string;
+    utr_number?: string;
+    matched_rsvp_id?: string;
+    matched_event_id?: string;
+    auto_approve_rsvp?: boolean;
+  }[],
+  statement_id?: string
+): Promise<StatementCommitResponse> {
   const res = await fetch(`${API_BASE_URL}/ledger/commit-statement`, {
     method: "POST",
     headers: authHeaders(),
-    body: JSON.stringify({ transactions }),
+    body: JSON.stringify({ transactions, statement_id }),
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
     throw new Error(err.detail || "Failed to commit statement transactions");
   }
+  return res.json();
+}
+
+export async function fetchStatementDocuments(): Promise<StatementDocumentListResponse> {
+  const res = await fetch(`${API_BASE_URL}/ledger/statements`, {
+    headers: authHeaders(),
+    cache: "no-store",
+  });
+  if (!res.ok) throw new Error("Failed to fetch statement documents history");
+  return res.json();
+}
+
+export async function fetchStatementDocument(statementId: string): Promise<StatementDocumentItem> {
+  const res = await fetch(`${API_BASE_URL}/ledger/statements/${statementId}`, {
+    headers: authHeaders(),
+    cache: "no-store",
+  });
+  if (!res.ok) throw new Error("Failed to fetch statement document details");
   return res.json();
 }
 
