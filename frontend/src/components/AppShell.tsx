@@ -24,8 +24,6 @@ import {
   Phone,
   Mail,
   Check,
-  Sun,
-  Moon,
 } from "lucide-react";
 import FestiveBackgroundPattern from "@/components/FestiveBackgroundPattern";
 
@@ -51,9 +49,6 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const [profileOpen, setProfileOpen] = useState(false);
   const profileRef = useRef<HTMLDivElement>(null);
 
-  // Dark Mode Theme State
-  const [theme, setTheme] = useState<"light" | "dark">("light");
-
   // Auth form state (Residency Type recorded strictly at signup)
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -61,25 +56,6 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const [flatNumber, setFlatNumber] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [signupResidency, setSignupResidency] = useState<"Owner" | "Renter">("Owner");
-
-  // Initialize theme from localStorage / system preference on mount
-  useEffect(() => {
-    const savedTheme = localStorage.getItem("residenthub_theme") as "light" | "dark" | null;
-    if (savedTheme) {
-      setTheme(savedTheme);
-      document.documentElement.classList.toggle("dark", savedTheme === "dark");
-    } else if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
-      setTheme("dark");
-      document.documentElement.classList.add("dark");
-    }
-  }, []);
-
-  const toggleTheme = () => {
-    const nextTheme = theme === "light" ? "dark" : "light";
-    setTheme(nextTheme);
-    localStorage.setItem("residenthub_theme", nextTheme);
-    document.documentElement.classList.toggle("dark", nextTheme === "dark");
-  };
 
   // Click outside to close profile dropdown
   useEffect(() => {
@@ -159,8 +135,8 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#faf7f2] dark:bg-[#12100e] relative text-stone-900 dark:text-stone-100 transition-colors duration-300">
-      {/* Light & Dark Faded Festive & Society Life Background Pattern */}
+    <div className="min-h-screen flex flex-col bg-[#faf7f2] relative text-stone-900">
+      {/* Light Faded Festive & Society Life Background Pattern */}
       <FestiveBackgroundPattern />
 
       {/* Slide-out Backdrop Overlay */}
@@ -249,22 +225,8 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           })}
         </nav>
 
-        {/* Drawer Footer */}
-        <div className="p-4 border-t border-stone-800 bg-stone-950/80 space-y-3">
-          {/* Quick Theme Switcher in Drawer */}
-          <div className="flex items-center justify-between p-2 rounded-xl bg-stone-900 border border-stone-800">
-            <span className="text-xs text-stone-400 font-medium flex items-center gap-1.5">
-              {theme === "dark" ? <Moon className="w-3.5 h-3.5 text-amber-400" /> : <Sun className="w-3.5 h-3.5 text-orange-400" />}
-              {theme === "dark" ? "Dark Mode" : "Light Mode"}
-            </span>
-            <button
-              onClick={toggleTheme}
-              className="p-1 px-2.5 rounded-lg bg-stone-800 hover:bg-stone-700 text-stone-200 text-xs font-semibold transition-all"
-            >
-              Toggle
-            </button>
-          </div>
-
+        {/* Drawer Footer Status */}
+        <div className="p-4 border-t border-stone-800 bg-stone-950/80">
           {user ? (
             <div className="p-3 rounded-2xl bg-stone-900 border border-stone-800 flex items-center gap-3">
               <div className="w-9 h-9 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-300 font-bold text-xs shrink-0">
@@ -293,55 +255,42 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0 min-h-screen relative z-10">
-        {/* Top Context Bar with Menu Toggle, Dark Mode & Top-Right Expandable Profile */}
-        <header className="sticky top-0 z-30 h-16 bg-[#faf7f2]/95 dark:bg-[#12100e]/95 backdrop-blur-md border-b border-[#eee7dd] dark:border-stone-800 px-4 sm:px-8 flex items-center justify-between shadow-sm transition-colors duration-300">
+        {/* Top Context Bar with Menu Toggle & Top-Right Expandable Profile */}
+        <header className="sticky top-0 z-30 h-16 bg-[#faf7f2]/95 backdrop-blur-md border-b border-[#eee7dd] px-4 sm:px-8 flex items-center justify-between shadow-sm">
           {/* Left: Menu Drawer Toggle & Society Title */}
           <div className="flex items-center gap-3.5">
             <button
               onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-stone-800 dark:text-stone-200 hover:bg-stone-200/70 dark:hover:bg-stone-800 border border-stone-300/80 dark:border-stone-700 shadow-sm transition-all text-xs font-semibold"
+              className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-stone-800 hover:bg-stone-200/70 border border-stone-300/80 shadow-sm transition-all text-xs font-semibold"
               title="Open Navigation Menu"
             >
-              <Menu className="w-4 h-4 text-orange-600 dark:text-orange-400" />
+              <Menu className="w-4 h-4 text-orange-600" />
               <span>Menu</span>
             </button>
 
             <div className="flex items-center gap-2">
               <span className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse" />
-              <span className="text-xs font-bold text-stone-800 dark:text-stone-200 hidden sm:inline">
+              <span className="text-xs font-bold text-stone-800 hidden sm:inline">
                 Runwal Gardens Tower 24
               </span>
               <span className="text-xs text-stone-400 hidden sm:inline">•</span>
-              <span className="text-xs font-semibold text-amber-800 dark:text-amber-300 bg-amber-100/80 dark:bg-amber-950/60 px-2 py-0.5 rounded-full border border-amber-200 dark:border-amber-800">
+              <span className="text-xs font-semibold text-amber-800 bg-amber-100/80 px-2 py-0.5 rounded-full border border-amber-200">
                 Vasudhaiva Kutumbakam 🪔
               </span>
             </div>
           </div>
 
-          {/* Right: Dark Mode Toggle & Expandable User Profile Dropdown */}
-          <div className="flex items-center gap-2.5">
-            {/* Theme Toggle Button */}
-            <button
-              onClick={toggleTheme}
-              className="p-2 rounded-xl text-stone-700 dark:text-stone-300 bg-white dark:bg-stone-900 border border-stone-300/80 dark:border-stone-700 shadow-sm hover:bg-stone-100 dark:hover:bg-stone-800 transition-all"
-              title={theme === "dark" ? "Switch to Light Mode" : "Switch to Dark Mode"}
-            >
-              {theme === "dark" ? (
-                <Sun className="w-4 h-4 text-amber-400" />
-              ) : (
-                <Moon className="w-4 h-4 text-stone-700" />
-              )}
-            </button>
-
+          {/* Right: Expandable User Profile Dropdown */}
+          <div className="flex items-center gap-3">
             {user ? (
               <div className="relative" ref={profileRef}>
                 {/* Profile Pill Trigger Button */}
                 <button
                   onClick={() => setProfileOpen(!profileOpen)}
-                  className={`flex items-center gap-2.5 px-3 py-1.5 rounded-2xl bg-white dark:bg-stone-900 border transition-all shadow-sm hover:shadow ${
+                  className={`flex items-center gap-2.5 px-3 py-1.5 rounded-2xl bg-white border transition-all shadow-sm hover:shadow ${
                     profileOpen
-                      ? "border-amber-400 ring-2 ring-amber-400/20 bg-amber-50/40 dark:bg-stone-800"
-                      : "border-[#eee7dd] dark:border-stone-700 hover:border-stone-300 dark:hover:border-stone-600"
+                      ? "border-amber-400 ring-2 ring-amber-400/20 bg-amber-50/40"
+                      : "border-[#eee7dd] hover:border-stone-300"
                   }`}
                   aria-expanded={profileOpen}
                 >
@@ -349,26 +298,26 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                     {user.full_name.charAt(0)}
                   </div>
                   <div className="text-left hidden sm:block">
-                    <p className="text-xs font-bold text-stone-900 dark:text-stone-100 leading-tight flex items-center gap-1.5">
+                    <p className="text-xs font-bold text-stone-900 leading-tight flex items-center gap-1.5">
                       {user.full_name.split(" ")[0]}
-                      <span className="text-[10px] font-semibold text-amber-700 dark:text-amber-300 bg-amber-100/80 dark:bg-amber-950 px-1.5 py-0.2 rounded font-mono border border-amber-200 dark:border-amber-800">
+                      <span className="text-[10px] font-semibold text-amber-700 bg-amber-100/80 px-1.5 py-0.2 rounded font-mono border border-amber-200">
                         {user.flat_number}
                       </span>
                     </p>
-                    <p className="text-[10px] font-semibold text-stone-500 dark:text-stone-400 leading-tight">
+                    <p className="text-[10px] font-semibold text-stone-500 leading-tight">
                       {userResidencyType} • {isAdmin ? "Admin" : "Resident"}
                     </p>
                   </div>
                   <ChevronDown
-                    className={`w-3.5 h-3.5 text-stone-500 dark:text-stone-400 transition-transform duration-200 ${
-                      profileOpen ? "rotate-180 text-amber-600 dark:text-amber-400" : ""
+                    className={`w-3.5 h-3.5 text-stone-500 transition-transform duration-200 ${
+                      profileOpen ? "rotate-180 text-amber-600" : ""
                     }`}
                   />
                 </button>
 
                 {/* Expandable Profile Dropdown Card */}
                 {profileOpen && (
-                  <div className="absolute right-0 mt-2 w-72 sm:w-80 bg-white dark:bg-stone-900 rounded-2xl border border-[#eee7dd] dark:border-stone-800 shadow-2xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+                  <div className="absolute right-0 mt-2 w-72 sm:w-80 bg-white rounded-2xl border border-[#eee7dd] shadow-2xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
                     {/* Header Banner */}
                     <div className="p-4 bg-gradient-to-br from-stone-900 via-stone-900 to-amber-950 text-white">
                       <div className="flex items-center gap-3">
@@ -388,76 +337,68 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                     </div>
 
                     {/* Member Details Grid */}
-                    <div className="p-4 space-y-3 bg-stone-50/50 dark:bg-stone-900/50 border-b border-stone-100 dark:border-stone-800">
+                    <div className="p-4 space-y-3 bg-stone-50/50 border-b border-stone-100">
                       {/* Flat Number & Role */}
                       <div className="grid grid-cols-2 gap-2">
-                        <div className="p-2.5 bg-white dark:bg-stone-800/80 rounded-xl border border-[#eee7dd] dark:border-stone-700 shadow-xs">
-                          <span className="text-[10px] font-bold text-stone-400 dark:text-stone-400 uppercase tracking-wider block font-mono">
+                        <div className="p-2.5 bg-white rounded-xl border border-[#eee7dd] shadow-xs">
+                          <span className="text-[10px] font-bold text-stone-400 uppercase tracking-wider block font-mono">
                             Flat Number
                           </span>
-                          <span className="text-xs font-extrabold text-stone-900 dark:text-stone-100 flex items-center gap-1 mt-0.5">
-                            <HomeIcon className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+                          <span className="text-xs font-extrabold text-stone-900 flex items-center gap-1 mt-0.5">
+                            <HomeIcon className="w-3.5 h-3.5 text-amber-600" />
                             Flat {user.flat_number}
                           </span>
                         </div>
 
-                        <div className="p-2.5 bg-white dark:bg-stone-800/80 rounded-xl border border-[#eee7dd] dark:border-stone-700 shadow-xs">
-                          <span className="text-[10px] font-bold text-stone-400 dark:text-stone-400 uppercase tracking-wider block font-mono">
+                        <div className="p-2.5 bg-white rounded-xl border border-[#eee7dd] shadow-xs">
+                          <span className="text-[10px] font-bold text-stone-400 uppercase tracking-wider block font-mono">
                             Society Role
                           </span>
-                          <span className="text-xs font-extrabold text-stone-900 dark:text-stone-100 flex items-center gap-1 mt-0.5">
-                            <Shield className="w-3.5 h-3.5 text-orange-600 dark:text-orange-400" />
+                          <span className="text-xs font-extrabold text-stone-900 flex items-center gap-1 mt-0.5">
+                            <Shield className="w-3.5 h-3.5 text-orange-600" />
                             {isAdmin ? "Admin Committee" : "Resident"}
                           </span>
                         </div>
                       </div>
 
                       {/* Official Recorded Residency Type (Fixed 1 per user) */}
-                      <div className="p-2.5 bg-white dark:bg-stone-800/80 rounded-xl border border-[#eee7dd] dark:border-stone-700 shadow-xs flex items-center justify-between">
+                      <div className="p-2.5 bg-white rounded-xl border border-[#eee7dd] shadow-xs flex items-center justify-between">
                         <div>
-                          <span className="text-[10px] font-bold text-stone-400 dark:text-stone-400 uppercase tracking-wider font-mono flex items-center gap-1">
-                            <Key className="w-3 h-3 text-amber-600 dark:text-amber-400" />
+                          <span className="text-[10px] font-bold text-stone-400 uppercase tracking-wider font-mono flex items-center gap-1">
+                            <Key className="w-3 h-3 text-amber-600" />
                             Residency Status
                           </span>
-                          <span className="text-xs font-extrabold text-stone-900 dark:text-stone-100 mt-0.5 block">
+                          <span className="text-xs font-extrabold text-stone-900 mt-0.5 block">
                             {userResidencyType === "Owner" ? "🏠 Flat Owner" : "🔑 Registered Tenant"}
                           </span>
                         </div>
 
                         <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full border ${
                           userResidencyType === "Owner"
-                            ? "bg-emerald-100 text-emerald-800 border-emerald-300 dark:bg-emerald-950/80 dark:text-emerald-300 dark:border-emerald-700"
-                            : "bg-blue-100 text-blue-800 border-blue-300 dark:bg-blue-950/80 dark:text-blue-300 dark:border-blue-700"
+                            ? "bg-emerald-100 text-emerald-800 border-emerald-300"
+                            : "bg-blue-100 text-blue-800 border-blue-300"
                         }`}>
                           ✓ {userResidencyType}
                         </span>
                       </div>
 
                       {/* Society Badge Info */}
-                      <div className="flex items-center justify-between px-1 text-[11px] text-stone-500 dark:text-stone-400 font-medium">
+                      <div className="flex items-center justify-between px-1 text-[11px] text-stone-500 font-medium">
                         <span>Society: Runwal Gardens T24</span>
-                        <span className="text-emerald-700 dark:text-emerald-400 font-semibold flex items-center gap-0.5">
+                        <span className="text-emerald-700 font-semibold flex items-center gap-0.5">
                           <Check className="w-3 h-3" /> Verified
                         </span>
                       </div>
                     </div>
 
                     {/* Footer / Log Out Action */}
-                    <div className="p-3 bg-white dark:bg-stone-900 flex items-center justify-between gap-2">
-                      <button
-                        onClick={toggleTheme}
-                        className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold text-stone-700 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800 border border-stone-200 dark:border-stone-700 transition-all"
-                      >
-                        {theme === "dark" ? <Sun className="w-3.5 h-3.5 text-amber-400" /> : <Moon className="w-3.5 h-3.5 text-stone-700" />}
-                        <span>{theme === "dark" ? "Light" : "Dark"}</span>
-                      </button>
-
+                    <div className="p-3 bg-white">
                       <button
                         onClick={() => {
                           setProfileOpen(false);
                           logout();
                         }}
-                        className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs font-bold text-rose-600 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/50 border border-rose-200/70 dark:border-rose-800 hover:border-rose-300 transition-all shadow-xs"
+                        className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs font-bold text-rose-600 hover:text-rose-700 hover:bg-rose-50 border border-rose-200/70 hover:border-rose-300 transition-all shadow-xs"
                       >
                         <LogOut className="w-3.5 h-3.5" />
                         Log Out
@@ -493,25 +434,25 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           <div className="modal-content p-6 max-w-md" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-5">
               <div>
-                <h2 className="text-xl font-bold text-stone-900 dark:text-white">
+                <h2 className="text-xl font-bold text-stone-900">
                   {authMode === "login" ? "Namaste! Welcome Back" : "Register Society Flat"}
                 </h2>
-                <p className="text-xs text-stone-500 dark:text-stone-400 mt-0.5">
+                <p className="text-xs text-stone-500 mt-0.5">
                   {authMode === "login"
                     ? "Access society events, payments, and notices"
                     : "Create your resident account with verified flat & residency status"}
                 </p>
               </div>
-              <button onClick={() => setShowAuth(false)} className="p-2 rounded-xl hover:bg-stone-100 dark:hover:bg-stone-800">
+              <button onClick={() => setShowAuth(false)} className="p-2 rounded-xl hover:bg-stone-100">
                 <X className="w-5 h-5 text-stone-400" />
               </button>
             </div>
 
             {/* 1-Click Demo Access Shortcuts */}
             {authMode === "login" && (
-              <div className="mb-5 p-3.5 bg-stone-50 dark:bg-stone-800/80 rounded-2xl border border-stone-200/90 dark:border-stone-700">
-                <p className="text-[11px] font-bold text-stone-700 dark:text-stone-300 uppercase tracking-wider mb-2 font-mono flex items-center gap-1.5">
-                  <Sparkles className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+              <div className="mb-5 p-3.5 bg-stone-50 rounded-2xl border border-stone-200/90">
+                <p className="text-[11px] font-bold text-stone-700 uppercase tracking-wider mb-2 font-mono flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5 text-amber-600" />
                   1-Click Demo Profiles
                 </p>
                 <div className="grid grid-cols-1 gap-2">
@@ -519,15 +460,15 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                     type="button"
                     onClick={() => handleQuickLogin("admin@residenthub.local", "admin123")}
                     disabled={authLoading}
-                    className="flex items-center justify-between px-3 py-2 rounded-xl bg-white dark:bg-stone-900 hover:bg-amber-50 dark:hover:bg-stone-800 border border-stone-200 dark:border-stone-700 hover:border-amber-300 text-left text-xs font-semibold text-stone-800 dark:text-stone-200 transition-all"
+                    className="flex items-center justify-between px-3 py-2 rounded-xl bg-white hover:bg-amber-50 border border-stone-200 hover:border-amber-300 text-left text-xs font-semibold text-stone-800 transition-all"
                   >
                     <div className="flex items-center gap-2">
-                      <span className="w-6 h-6 rounded-lg bg-orange-100 dark:bg-orange-950 text-orange-700 dark:text-orange-300 flex items-center justify-center font-bold text-[10px]">
+                      <span className="w-6 h-6 rounded-lg bg-orange-100 text-orange-700 flex items-center justify-center font-bold text-[10px]">
                         👑
                       </span>
                       <div>
                         <span className="font-bold block">Admin Committee (Owner)</span>
-                        <span className="text-[10px] text-stone-500 dark:text-stone-400">Rajesh Sharma • Flat A-402</span>
+                        <span className="text-[10px] text-stone-500">Rajesh Sharma • Flat A-402</span>
                       </div>
                     </div>
                     <span className="text-[10px] text-stone-400 font-mono">admin@residenthub.local</span>
@@ -537,15 +478,15 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                     type="button"
                     onClick={() => handleQuickLogin("member@residenthub.local", "member123")}
                     disabled={authLoading}
-                    className="flex items-center justify-between px-3 py-2 rounded-xl bg-white dark:bg-stone-900 hover:bg-amber-50 dark:hover:bg-stone-800 border border-stone-200 dark:border-stone-700 hover:border-amber-300 text-left text-xs font-semibold text-stone-800 dark:text-stone-200 transition-all"
+                    className="flex items-center justify-between px-3 py-2 rounded-xl bg-white hover:bg-amber-50 border border-stone-200 hover:border-amber-300 text-left text-xs font-semibold text-stone-800 transition-all"
                   >
                     <div className="flex items-center gap-2">
-                      <span className="w-6 h-6 rounded-lg bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300 flex items-center justify-center font-bold text-[10px]">
+                      <span className="w-6 h-6 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center font-bold text-[10px]">
                         👩
                       </span>
                       <div>
                         <span className="font-bold block">Priya Patel (Renter)</span>
-                        <span className="text-[10px] text-stone-500 dark:text-stone-400">Flat B-201 • Renter</span>
+                        <span className="text-[10px] text-stone-500">Flat B-201 • Renter</span>
                       </div>
                     </div>
                     <span className="text-[10px] text-stone-400 font-mono">member@residenthub.local</span>
@@ -555,7 +496,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             )}
 
             {authError && (
-              <div className="mb-4 px-3.5 py-2.5 rounded-xl bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800 text-xs font-medium">
+              <div className="mb-4 px-3.5 py-2.5 rounded-xl bg-rose-50 text-rose-700 border border-rose-200 text-xs font-medium">
                 {authError}
               </div>
             )}
@@ -608,8 +549,8 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                         onClick={() => setSignupResidency("Owner")}
                         className={`p-2.5 rounded-xl border text-xs font-bold flex items-center justify-center gap-1.5 transition-all ${
                           signupResidency === "Owner"
-                            ? "bg-amber-50 dark:bg-amber-950/50 border-amber-500 text-amber-900 dark:text-amber-300 ring-2 ring-amber-500/20"
-                            : "bg-white dark:bg-stone-800 border-stone-200 dark:border-stone-700 text-stone-700 dark:text-stone-300"
+                            ? "bg-amber-50 border-amber-500 text-amber-900 ring-2 ring-amber-500/20"
+                            : "bg-white border-stone-200 text-stone-700"
                         }`}
                       >
                         🏠 Flat Owner
@@ -619,8 +560,8 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                         onClick={() => setSignupResidency("Renter")}
                         className={`p-2.5 rounded-xl border text-xs font-bold flex items-center justify-center gap-1.5 transition-all ${
                           signupResidency === "Renter"
-                            ? "bg-blue-50 dark:bg-blue-950/50 border-blue-500 text-blue-900 dark:text-blue-300 ring-2 ring-blue-500/20"
-                            : "bg-white dark:bg-stone-800 border-stone-200 dark:border-stone-700 text-stone-700 dark:text-stone-300"
+                            ? "bg-blue-50 border-blue-500 text-blue-900 ring-2 ring-blue-500/20"
+                            : "bg-white border-stone-200 text-stone-700"
                         }`}
                       >
                         🔑 Renter / Tenant
@@ -663,14 +604,14 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
               </button>
             </form>
 
-            <div className="mt-4 pt-3 border-t border-stone-100 dark:border-stone-800 text-center">
+            <div className="mt-4 pt-3 border-t border-stone-100 text-center">
               <button
                 type="button"
                 onClick={() => {
                   setAuthMode(authMode === "login" ? "signup" : "login");
                   setAuthError("");
                 }}
-                className="text-xs text-orange-600 dark:text-orange-400 hover:text-orange-700 font-semibold"
+                className="text-xs text-orange-600 hover:text-orange-700 font-semibold"
               >
                 {authMode === "login"
                   ? "Don't have an account? Register flat"
