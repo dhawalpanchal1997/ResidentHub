@@ -77,9 +77,18 @@ export default function IssuesHelpdeskPage() {
   const [categoryFilter, setCategoryFilter] = useState<string>("All");
   const [searchQuery, setSearchQuery] = useState<string>("");
 
-  // Modals
+  // Modals & Feedback
   const [showBotModal, setShowBotModal] = useState<boolean>(false);
   const [selectedIssue, setSelectedIssue] = useState<IssueItem | null>(null);
+  const [issueToDelete, setIssueToDelete] = useState<string | null>(null);
+  const [toast, setToast] = useState<{ message: string; type: "success" | "error" | "info" } | null>(null);
+
+  const showToast = (message: string, type: "success" | "error" | "info" = "success") => {
+    setToast({ message, type });
+    setTimeout(() => {
+      setToast(null);
+    }, 3500);
+  };
 
   // Detail Modal Comment Form
   const [newComment, setNewComment] = useState<string>("");
@@ -144,8 +153,9 @@ export default function IssuesHelpdeskPage() {
       });
       setNewComment("");
       await loadData();
+      showToast("Comment posted to ticket timeline", "success");
     } catch (err: any) {
-      alert(err.message || "Failed to post comment");
+      showToast(err.message || "Failed to post comment", "error");
     } finally {
       setSubmittingComment(false);
     }
@@ -168,27 +178,29 @@ export default function IssuesHelpdeskPage() {
       });
 
       await loadData();
-      alert("Ticket status updated successfully!");
+      showToast(`Ticket status updated to ${adminStatus.toUpperCase()}`, "success");
     } catch (err: any) {
-      alert(err.message || "Failed to update ticket");
+      showToast(err.message || "Failed to update ticket", "error");
     } finally {
       setSavingAdminUpdate(false);
     }
   };
 
-  const handleDeleteIssue = async (issueId: string) => {
-    if (!confirm("Are you sure you want to delete this issue ticket?")) return;
+  const confirmDeleteIssue = async () => {
+    if (!issueToDelete) return;
     try {
       if (!isAdmin) {
         await login("admin@residenthub.com", "admin123").catch(() => {});
       }
-      await deleteIssue(issueId);
-      if (selectedIssue?.id === issueId) {
+      await deleteIssue(issueToDelete);
+      if (selectedIssue?.id === issueToDelete) {
         setSelectedIssue(null);
       }
+      setIssueToDelete(null);
       await loadData();
+      showToast("Ticket removed successfully", "info");
     } catch (err: any) {
-      alert(err.message || "Failed to delete ticket");
+      showToast(err.message || "Failed to delete ticket", "error");
     }
   };
 
@@ -691,7 +703,7 @@ export default function IssuesHelpdeskPage() {
                     Admin Management & Technician Assignment
                   </span>
                   <button
-                    onClick={() => handleDeleteIssue(selectedIssue.id)}
+                    onClick={() => setIssueToDelete(selectedIssue.id)}
                     className="text-[11px] font-bold text-rose-600 hover:text-rose-700 flex items-center gap-1"
                   >
                     <Trash2 className="w-3 h-3" />
@@ -800,6 +812,74 @@ export default function IssuesHelpdeskPage() {
                 </form>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* 🗑️ IN-APP DELETE CONFIRMATION MODAL */}
+      {issueToDelete && (
+        <div className="modal-backdrop" onClick={() => setIssueToDelete(null)}>
+          <div
+            className="modal-content max-w-sm p-6 bg-white dark:bg-[#181411] border border-stone-200 dark:border-[#383028] shadow-2xl rounded-3xl text-center space-y-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="w-12 h-12 rounded-2xl bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 flex items-center justify-center mx-auto">
+              <Trash2 className="w-6 h-6" />
+            </div>
+            <div>
+              <h3 className="text-base font-extrabold text-stone-900 dark:text-white">
+                Delete Issue Ticket?
+              </h3>
+              <p className="text-xs text-stone-500 dark:text-stone-400 mt-1">
+                Are you sure you want to remove this ticket from the society helpdesk? This action cannot be undone.
+              </p>
+            </div>
+            <div className="flex gap-2.5 pt-2">
+              <button
+                type="button"
+                onClick={() => setIssueToDelete(null)}
+                className="btn-secondary flex-1 py-2 text-xs"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={confirmDeleteIssue}
+                className="btn-primary flex-1 py-2 text-xs bg-rose-600 hover:bg-rose-700 text-white font-bold"
+              >
+                Yes, Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 🔔 MODERN TOAST NOTIFICATION BANNER */}
+      {toast && (
+        <div className="fixed top-20 right-6 z-50 animate-in fade-in slide-in-from-top-4 duration-300">
+          <div
+            className={`flex items-center gap-2.5 px-4 py-3 rounded-2xl shadow-xl border text-xs font-bold ${
+              toast.type === "success"
+                ? "bg-emerald-950/95 text-emerald-200 border-emerald-500/40 backdrop-blur-xl"
+                : toast.type === "error"
+                ? "bg-rose-950/95 text-rose-200 border-rose-500/40 backdrop-blur-xl"
+                : "bg-stone-900/95 text-amber-200 border-amber-500/40 backdrop-blur-xl"
+            }`}
+          >
+            {toast.type === "success" ? (
+              <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+            ) : toast.type === "error" ? (
+              <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
+            ) : (
+              <Sparkles className="w-4 h-4 text-amber-400 shrink-0" />
+            )}
+            <span>{toast.message}</span>
+            <button
+              onClick={() => setToast(null)}
+              className="p-1 rounded-lg hover:bg-white/10 text-stone-400 hover:text-white ml-2 transition-all"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
           </div>
         </div>
       )}

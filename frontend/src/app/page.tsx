@@ -265,16 +265,40 @@ export default function DashboardPage() {
     }
   };
 
-  const handleDeleteMember = async (memberId: string) => {
-    if (!confirm("Are you sure you want to remove this committee member record?")) return;
+  const [deleteConfirm, setDeleteConfirm] = useState<{
+    type: "notice" | "committee";
+    id: string;
+    title: string;
+  } | null>(null);
+
+  const [toast, setToast] = useState<{ message: string; type: "success" | "error" | "info" } | null>(null);
+
+  const showToast = (message: string, type: "success" | "error" | "info" = "success") => {
+    setToast({ message, type });
+    setTimeout(() => {
+      setToast(null);
+    }, 3500);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteConfirm) return;
     try {
       if (!isAdmin) {
         await login("admin@residenthub.com", "admin123").catch(() => {});
       }
-      await deleteCommitteeMember(memberId);
-      setCommittee((prev) => prev.filter((m) => m.id !== memberId));
+
+      if (deleteConfirm.type === "notice") {
+        await deleteNotice(deleteConfirm.id);
+        setNotices((prev) => prev.filter((n) => n.id !== deleteConfirm.id));
+        showToast("Notice deleted successfully", "info");
+      } else if (deleteConfirm.type === "committee") {
+        await deleteCommitteeMember(deleteConfirm.id);
+        setCommittee((prev) => prev.filter((m) => m.id !== deleteConfirm.id));
+        showToast("Committee record removed", "info");
+      }
+      setDeleteConfirm(null);
     } catch (err: any) {
-      alert(err.message || "Failed to delete committee member");
+      showToast(err.message || "Failed to delete item", "error");
     }
   };
 
@@ -320,23 +344,11 @@ export default function DashboardPage() {
       setShowAddNotice(false);
       const updatedNotices = await fetchNotices();
       setNotices(updatedNotices);
+      showToast("Society Notice broadcasted live!", "success");
     } catch (err: any) {
       setNoticeError(err.message || "Failed to broadcast notice");
     } finally {
       setSubmittingNotice(false);
-    }
-  };
-
-  const handleDeleteNotice = async (noticeId: string) => {
-    if (!confirm("Are you sure you want to remove this notice?")) return;
-    try {
-      if (!isAdmin) {
-        await login("admin@residenthub.com", "admin123").catch(() => {});
-      }
-      await deleteNotice(noticeId);
-      setNotices((prev) => prev.filter((n) => n.id !== noticeId));
-    } catch (err: any) {
-      alert(err.message || "Failed to delete notice");
     }
   };
 
@@ -777,7 +789,7 @@ export default function DashboardPage() {
                                 {formatDate(n.created_at)}
                               </span>
                               <button
-                                onClick={() => handleDeleteNotice(n.id)}
+                                onClick={() => setDeleteConfirm({ type: "notice", id: n.id, title: n.title })}
                                 className="p-1 rounded text-stone-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 opacity-0 group-hover:opacity-100 transition-opacity"
                                 title="Delete Notice"
                               >
@@ -1003,7 +1015,7 @@ export default function DashboardPage() {
                           <Edit2 className="w-3.5 h-3.5" />
                         </button>
                         <button
-                          onClick={() => handleDeleteMember(leader.id)}
+                          onClick={() => setDeleteConfirm({ type: "committee", id: leader.id, title: leader.name })}
                           className="p-1.5 rounded-xl bg-white/90 dark:bg-[#28211b] text-stone-600 dark:text-stone-300 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 shadow-xs border border-stone-200 dark:border-[#40352b] transition-all opacity-80 group-hover:opacity-100"
                           title="Delete Record"
                         >
@@ -1620,6 +1632,74 @@ export default function DashboardPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* 🗑️ IN-APP DELETE CONFIRMATION MODAL */}
+      {deleteConfirm && (
+        <div className="modal-backdrop" onClick={() => setDeleteConfirm(null)}>
+          <div
+            className="modal-content max-w-sm p-6 bg-white dark:bg-[#181411] border border-stone-200 dark:border-[#383028] shadow-2xl rounded-3xl text-center space-y-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="w-12 h-12 rounded-2xl bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 flex items-center justify-center mx-auto">
+              <Trash2 className="w-6 h-6" />
+            </div>
+            <div>
+              <h3 className="text-base font-extrabold text-stone-900 dark:text-white">
+                Remove {deleteConfirm.type === "notice" ? "Society Notice" : "Committee Member"}?
+              </h3>
+              <p className="text-xs text-stone-500 dark:text-stone-400 mt-1">
+                Are you sure you want to remove &quot;{deleteConfirm.title}&quot;? This action cannot be undone.
+              </p>
+            </div>
+            <div className="flex gap-2.5 pt-2">
+              <button
+                type="button"
+                onClick={() => setDeleteConfirm(null)}
+                className="btn-secondary flex-1 py-2 text-xs"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmDelete}
+                className="btn-primary flex-1 py-2 text-xs bg-rose-600 hover:bg-rose-700 text-white font-bold"
+              >
+                Yes, Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 🔔 MODERN TOAST NOTIFICATION BANNER */}
+      {toast && (
+        <div className="fixed top-20 right-6 z-50 animate-in fade-in slide-in-from-top-4 duration-300">
+          <div
+            className={`flex items-center gap-2.5 px-4 py-3 rounded-2xl shadow-xl border text-xs font-bold ${
+              toast.type === "success"
+                ? "bg-emerald-950/95 text-emerald-200 border-emerald-500/40 backdrop-blur-xl"
+                : toast.type === "error"
+                ? "bg-rose-950/95 text-rose-200 border-rose-500/40 backdrop-blur-xl"
+                : "bg-stone-900/95 text-amber-200 border-amber-500/40 backdrop-blur-xl"
+            }`}
+          >
+            {toast.type === "success" ? (
+              <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+            ) : toast.type === "error" ? (
+              <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
+            ) : (
+              <Sparkles className="w-4 h-4 text-amber-400 shrink-0" />
+            )}
+            <span>{toast.message}</span>
+            <button
+              onClick={() => setToast(null)}
+              className="p-1 rounded-lg hover:bg-white/10 text-stone-400 hover:text-white ml-2 transition-all"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
           </div>
         </div>
       )}
