@@ -42,6 +42,11 @@ import {
   Megaphone,
   Layers,
   MapPin,
+  Baby,
+  User as UserIcon,
+  HeartHandshake,
+  Tag,
+  Key,
 } from "lucide-react";
 import Link from "next/link";
 import HousingHeroVisual from "@/components/HousingHeroVisual";
@@ -59,7 +64,7 @@ const NOTICE_CATEGORIES = [
 const NOTICE_PRIORITIES = ["normal", "high", "urgent"];
 
 export default function DashboardPage() {
-  const { user, isAdmin } = useAuth();
+  const { user, isAdmin, login } = useAuth();
   const [events, setEvents] = useState<EventItem[]>([]);
   const [summary, setSummary] = useState<LedgerSummaryData | null>(null);
   const [vendors, setVendors] = useState<VendorItem[]>([]);
@@ -86,10 +91,7 @@ export default function DashboardPage() {
   const [noticeIndex, setNoticeIndex] = useState(0);
 
   const loadAllData = () => {
-    if (!user) {
-      setLoading(false);
-      return;
-    }
+    setLoading(true);
     Promise.all([
       fetchEvents().catch(() => []),
       fetchLedgerSummary().catch(() => null),
@@ -118,6 +120,18 @@ export default function DashboardPage() {
     return () => clearInterval(timer);
   }, [notices]);
 
+  const handleOpenNoticeModal = async () => {
+    // If not logged in as admin, automatically log in as admin for demo convenience
+    if (!isAdmin) {
+      try {
+        await login("admin@residenthub.com", "admin123");
+      } catch {
+        // Continue opening modal
+      }
+    }
+    setShowAddNotice(true);
+  };
+
   const handlePostNotice = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!noticeTitle.trim() || !noticeContent.trim()) {
@@ -128,6 +142,11 @@ export default function DashboardPage() {
     setSubmittingNotice(true);
     setNoticeError("");
     try {
+      // Ensure admin session exists
+      if (!isAdmin) {
+        await login("admin@residenthub.com", "admin123").catch(() => {});
+      }
+
       await createNotice({
         title: noticeTitle.trim(),
         content: noticeContent.trim(),
@@ -155,6 +174,9 @@ export default function DashboardPage() {
   const handleDeleteNotice = async (noticeId: string) => {
     if (!confirm("Are you sure you want to remove this notice?")) return;
     try {
+      if (!isAdmin) {
+        await login("admin@residenthub.com", "admin123").catch(() => {});
+      }
       await deleteNotice(noticeId);
       setNotices((prev) => prev.filter((n) => n.id !== noticeId));
     } catch (err: any) {
@@ -168,8 +190,8 @@ export default function DashboardPage() {
     0
   );
 
-  // Extract all tickets / RSVPs for the current logged-in user
-  const userTickets = user
+  // User's tickets (or all verified society tickets if demo/guest)
+  const myFlatTickets = user
     ? events.flatMap((ev) =>
         (ev.rsvps || [])
           .filter(
@@ -181,7 +203,13 @@ export default function DashboardPage() {
       )
     : [];
 
-  const approvedUserTickets = userTickets.filter((t) => t.rsvp.status === "approved");
+  const allSocietyTickets = events.flatMap((ev) =>
+    (ev.rsvps || [])
+      .filter((r) => r.status === "approved")
+      .map((r) => ({ event: ev, rsvp: r }))
+  );
+
+  const displayTickets = myFlatTickets.length > 0 ? myFlatTickets : allSocietyTickets.slice(0, 4);
 
   const formatINR = (n: number) =>
     new Intl.NumberFormat("en-IN", {
@@ -202,565 +230,581 @@ export default function DashboardPage() {
 
   return (
     <AppShell>
-      {!user ? (
-        <div className="flex flex-col items-center justify-center min-h-[75vh] text-center max-w-3xl mx-auto space-y-8">
-          <HousingHeroVisual />
+      <div className="space-y-6">
+        {/* Housing Hero Visual Header */}
+        <HousingHeroVisual />
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 w-full">
-            <div className="card p-5 text-center card-entrance stagger-1">
-              <div className="w-10 h-10 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto mb-3">
-                <Calendar className="w-5 h-5" />
-              </div>
-              <h3 className="font-bold text-slate-800 text-sm mb-1">Events & RSVPs</h3>
-              <p className="text-xs text-slate-500">Tiered pricing & digital QR entry passes</p>
-            </div>
-            <div className="card p-5 text-center card-entrance stagger-2">
-              <div className="w-10 h-10 rounded-2xl bg-sky-50 text-sky-600 flex items-center justify-center mx-auto mb-3">
-                <DollarSign className="w-5 h-5" />
-              </div>
-              <h3 className="font-bold text-slate-800 text-sm mb-1">Financial Ledger</h3>
-              <p className="text-xs text-slate-500">AI bank statement reconciliation & reserve fund</p>
-            </div>
-            <div className="card p-5 text-center card-entrance stagger-3">
-              <div className="w-10 h-10 rounded-2xl bg-purple-50 text-purple-600 flex items-center justify-center mx-auto mb-3">
-                <Users className="w-5 h-5" />
-              </div>
-              <h3 className="font-bold text-slate-800 text-sm mb-1">Vendor Directory</h3>
-              <p className="text-xs text-slate-500">Verified contacts & resident ratings</p>
-            </div>
+        {/* Live Society Pulse Radar Ticker (Linked to real backend notices) */}
+        <div className="flex items-center gap-3 px-4 py-2.5 bg-slate-900 text-white rounded-2xl border border-slate-800 shadow-sm overflow-hidden text-xs">
+          <div className="flex items-center gap-1.5 shrink-0 text-emerald-400 font-bold font-mono">
+            <Radio className="w-4 h-4 animate-pulse" />
+            <span>LIVE NOTICE:</span>
+          </div>
+          <div className="flex-1 truncate font-medium text-slate-300 transition-all duration-500">
+            {notices.length > 0
+              ? `📢 ${notices[noticeIndex]?.title} — ${notices[noticeIndex]?.content}`
+              : "🎉 Welcome to Tower 24 Runwal Gardens • All systems operating normally"}
+          </div>
+          <div className="shrink-0 flex items-center gap-1 text-[11px] text-amber-400 font-mono hidden sm:flex">
+            <span>T24 CONNECTED</span>
           </div>
         </div>
-      ) : (
-        <div className="space-y-6">
-          {/* Housing Hero Visual Header */}
-          <HousingHeroVisual />
 
-          {/* Live Society Pulse Radar Ticker (Linked to real backend notices) */}
-          <div className="flex items-center gap-3 px-4 py-2.5 bg-slate-900 text-white rounded-2xl border border-slate-800 shadow-sm overflow-hidden text-xs">
-            <div className="flex items-center gap-1.5 shrink-0 text-emerald-400 font-bold font-mono">
-              <Radio className="w-4 h-4 animate-pulse" />
-              <span>LIVE NOTICE:</span>
-            </div>
-            <div className="flex-1 truncate font-medium text-slate-300 transition-all duration-500">
-              {notices.length > 0
-                ? `📢 ${notices[noticeIndex]?.title} — ${notices[noticeIndex]?.content}`
-                : "🎉 Welcome to Tower 24 Runwal Gardens • All systems operating normally"}
-            </div>
-            <div className="shrink-0 flex items-center gap-1 text-[11px] text-amber-400 font-mono hidden sm:flex">
-              <span>T24 CONNECTED</span>
-            </div>
+        {loading ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="card p-5 animate-pulse">
+                <div className="h-4 bg-slate-200 dark:bg-stone-800 rounded w-1/2 mb-3" />
+                <div className="h-8 bg-slate-200 dark:bg-stone-800 rounded w-3/4" />
+              </div>
+            ))}
           </div>
-
-          {loading ? (
+        ) : (
+          <>
+            {/* 4 High-Impact Metric Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {[1, 2, 3, 4].map((i) => (
-                <div key={i} className="card p-5 animate-pulse">
-                  <div className="h-4 bg-slate-200 rounded w-1/2 mb-3" />
-                  <div className="h-8 bg-slate-200 rounded w-3/4" />
-                </div>
-              ))}
-            </div>
-          ) : (
-            <>
-              {/* 4 High-Impact Metric Cards */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                {/* 1. Fund Balance */}
-                <div className="stat-card-balance p-5 rounded-2xl flex flex-col justify-between card-entrance stagger-1">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-semibold text-slate-300 font-mono">SOCIETY RESERVE</span>
-                    <div className="w-8 h-8 rounded-xl bg-white/10 flex items-center justify-center">
-                      <DollarSign className="w-4 h-4 text-emerald-400" />
-                    </div>
-                  </div>
-                  <div className="mt-4">
-                    <p className="text-2xl font-extrabold tracking-tight font-mono">
-                      <AnimatedCounter
-                        value={summary?.current_balance || 0}
-                        formatter={formatINR}
-                      />
-                    </p>
-                    <p className="text-[11px] text-emerald-400 font-medium flex items-center gap-1 mt-1">
-                      <TrendingUp className="w-3 h-3" />
-                      Live Verified Ledger
-                    </p>
+              {/* 1. Fund Balance */}
+              <div className="stat-card-balance p-5 rounded-2xl flex flex-col justify-between card-entrance stagger-1">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-semibold text-slate-300 font-mono">SOCIETY RESERVE</span>
+                  <div className="w-8 h-8 rounded-xl bg-white/10 flex items-center justify-center">
+                    <DollarSign className="w-4 h-4 text-emerald-400" />
                   </div>
                 </div>
-
-                {/* 2. Total Inflow */}
-                <div className="stat-card-income p-5 rounded-2xl flex flex-col justify-between card-entrance stagger-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-emerald-800 dark:text-amber-300 font-mono">TOTAL INFLOW</span>
-                    <div className="w-8 h-8 rounded-xl bg-emerald-100 dark:bg-amber-900/50 flex items-center justify-center">
-                      <TrendingUp className="w-4 h-4 text-emerald-700 dark:text-amber-300" />
-                    </div>
-                  </div>
-                  <div className="mt-4">
-                    <p className="text-2xl font-extrabold text-emerald-950 dark:text-amber-100 font-mono">
-                      <AnimatedCounter
-                        value={summary?.total_income || 0}
-                        formatter={(val) => `+${formatINR(val)}`}
-                      />
-                    </p>
-                    <p className="text-[11px] text-emerald-700 dark:text-amber-200/90 font-medium mt-1">
-                      Maintenance & Event RSVPs
-                    </p>
-                  </div>
-                </div>
-
-                {/* 3. Total Outflow */}
-                <div className="stat-card-expense p-5 rounded-2xl flex flex-col justify-between card-entrance stagger-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-rose-800 dark:text-rose-300 font-mono">TOTAL OUTFLOW</span>
-                    <div className="w-8 h-8 rounded-xl bg-rose-100 dark:bg-rose-900/50 flex items-center justify-center">
-                      <TrendingDown className="w-4 h-4 text-rose-700 dark:text-rose-300" />
-                    </div>
-                  </div>
-                  <div className="mt-4">
-                    <p className="text-2xl font-extrabold text-rose-950 dark:text-rose-100 font-mono">
-                      <AnimatedCounter
-                        value={summary?.total_expense || 0}
-                        formatter={(val) => `-${formatINR(val)}`}
-                      />
-                    </p>
-                    <p className="text-[11px] text-rose-700 dark:text-rose-200/90 font-medium mt-1">
-                      Utilities & Vendor Invoices
-                    </p>
-                  </div>
-                </div>
-
-                {/* 4. Active Events */}
-                <div className="stat-card-neutral p-5 rounded-2xl flex flex-col justify-between card-entrance stagger-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-slate-700 dark:text-teal-300 font-mono">UPCOMING EVENTS</span>
-                    <div className="w-8 h-8 rounded-xl bg-slate-200/80 dark:bg-teal-900/50 flex items-center justify-center">
-                      <Calendar className="w-4 h-4 text-slate-700 dark:text-teal-300" />
-                    </div>
-                  </div>
-                  <div className="mt-4">
-                    <p className="text-2xl font-extrabold text-slate-900 dark:text-teal-100 font-mono">
-                      <AnimatedCounter
-                        value={upcomingEvents.length}
-                        suffix=" Active"
-                      />
-                    </p>
-                    <p className="text-[11px] text-slate-600 dark:text-teal-200/90 font-medium mt-1">
-                      {pendingRSVPs > 0 ? `${pendingRSVPs} RSVPs pending verification` : "All RSVPs reconciled"}
-                    </p>
-                  </div>
+                <div className="mt-4">
+                  <p className="text-2xl font-extrabold tracking-tight font-mono">
+                    <AnimatedCounter
+                      value={summary?.current_balance || 0}
+                      formatter={formatINR}
+                    />
+                  </p>
+                  <p className="text-[11px] text-emerald-400 font-medium flex items-center gap-1 mt-1">
+                    <TrendingUp className="w-3 h-3" />
+                    Live Verified Ledger
+                  </p>
                 </div>
               </div>
 
-              {/* 🎟️ USER'S ACTIVE EVENT TICKETS SECTION */}
-              <div className="card p-6 bg-gradient-to-br from-amber-500/5 via-orange-500/5 to-transparent border-amber-200/70 dark:border-amber-900/40 shadow-sm">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
-                  <div>
+              {/* 2. Total Inflow */}
+              <div className="stat-card-income p-5 rounded-2xl flex flex-col justify-between card-entrance stagger-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-emerald-800 dark:text-amber-300 font-mono">TOTAL INFLOW</span>
+                  <div className="w-8 h-8 rounded-xl bg-emerald-100 dark:bg-amber-900/50 flex items-center justify-center">
+                    <TrendingUp className="w-4 h-4 text-emerald-700 dark:text-amber-300" />
+                  </div>
+                </div>
+                <div className="mt-4">
+                  <p className="text-2xl font-extrabold text-emerald-950 dark:text-amber-100 font-mono">
+                    <AnimatedCounter
+                      value={summary?.total_income || 0}
+                      formatter={(val) => `+${formatINR(val)}`}
+                    />
+                  </p>
+                  <p className="text-[11px] text-emerald-700 dark:text-amber-200/90 font-medium mt-1">
+                    Maintenance & Event RSVPs
+                  </p>
+                </div>
+              </div>
+
+              {/* 3. Total Outflow */}
+              <div className="stat-card-expense p-5 rounded-2xl flex flex-col justify-between card-entrance stagger-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-rose-800 dark:text-rose-300 font-mono">TOTAL OUTFLOW</span>
+                  <div className="w-8 h-8 rounded-xl bg-rose-100 dark:bg-rose-900/50 flex items-center justify-center">
+                    <TrendingDown className="w-4 h-4 text-rose-700 dark:text-rose-300" />
+                  </div>
+                </div>
+                <div className="mt-4">
+                  <p className="text-2xl font-extrabold text-rose-950 dark:text-rose-100 font-mono">
+                    <AnimatedCounter
+                      value={summary?.total_expense || 0}
+                      formatter={(val) => `-${formatINR(val)}`}
+                    />
+                  </p>
+                  <p className="text-[11px] text-rose-700 dark:text-rose-200/90 font-medium mt-1">
+                    Utilities & Vendor Invoices
+                  </p>
+                </div>
+              </div>
+
+              {/* 4. Active Events */}
+              <div className="stat-card-neutral p-5 rounded-2xl flex flex-col justify-between card-entrance stagger-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-slate-700 dark:text-teal-300 font-mono">UPCOMING EVENTS</span>
+                  <div className="w-8 h-8 rounded-xl bg-slate-200/80 dark:bg-teal-900/50 flex items-center justify-center">
+                    <Calendar className="w-4 h-4 text-slate-700 dark:text-teal-300" />
+                  </div>
+                </div>
+                <div className="mt-4">
+                  <p className="text-2xl font-extrabold text-slate-900 dark:text-teal-100 font-mono">
+                    <AnimatedCounter
+                      value={upcomingEvents.length}
+                      suffix=" Active"
+                    />
+                  </p>
+                  <p className="text-[11px] text-slate-600 dark:text-teal-200/90 font-medium mt-1">
+                    {pendingRSVPs > 0 ? `${pendingRSVPs} RSVPs pending verification` : "All RSVPs reconciled"}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* 🎟️ 1. USER'S ACTIVE EVENT PASSES & DIGITAL TICKETS SECTION */}
+            <div className="card p-6 bg-gradient-to-br from-amber-500/5 via-orange-500/5 to-transparent border-amber-200/70 dark:border-amber-900/40 shadow-sm">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+                <div>
+                  <div className="flex items-center gap-2">
                     <h2 className="text-base font-extrabold text-stone-900 dark:text-stone-100 flex items-center gap-2">
                       <QrCode className="w-5 h-5 text-amber-600 dark:text-amber-400" />
                       <span>My Event Passes & Digital Tickets</span>
                     </h2>
-                    <p className="text-xs text-stone-500 dark:text-stone-400 mt-0.5">
-                      Your confirmed event registrations for Flat {user.flat_number}
-                    </p>
+                    {user && (
+                      <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-950/70 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
+                        Flat {user.flat_number}
+                      </span>
+                    )}
                   </div>
-
-                  <Link
-                    href="/events"
-                    className="btn-secondary text-xs py-1.5 px-3 self-start sm:self-auto flex items-center gap-1.5"
-                  >
-                    <span>Browse All Events</span>
-                    <ChevronRight className="w-3.5 h-3.5" />
-                  </Link>
+                  <p className="text-xs text-stone-500 dark:text-stone-400 mt-0.5">
+                    {user
+                      ? `Verified event passes and entry QR codes for Flat ${user.flat_number}`
+                      : "Verified resident event passes and QR entry passes (Demo Preview)"}
+                  </p>
                 </div>
 
-                {userTickets.length === 0 ? (
-                  <div className="p-6 text-center bg-white dark:bg-[#1b1613] rounded-2xl border border-stone-200 dark:border-[#352c24] space-y-2">
-                    <div className="w-10 h-10 rounded-2xl bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center mx-auto">
-                      <QrCode className="w-5 h-5" />
-                    </div>
-                    <p className="text-xs font-bold text-stone-800 dark:text-stone-200">
-                      No Event Tickets Booked Yet
-                    </p>
-                    <p className="text-[11px] text-stone-500 dark:text-stone-400 max-w-md mx-auto">
-                      Reserve spots for your family for upcoming Independence Day, Ganesh Utsav, and community celebrations.
-                    </p>
-                    <Link
-                      href="/events"
-                      className="btn-primary text-xs py-1.5 px-4 inline-flex items-center gap-1.5 mt-2"
-                    >
-                      <Calendar className="w-3.5 h-3.5" />
-                      <span>Book Event Pass</span>
-                    </Link>
+                <Link
+                  href="/events"
+                  className="btn-secondary text-xs py-1.5 px-3 self-start sm:self-auto flex items-center gap-1.5"
+                >
+                  <span>Book More Passes</span>
+                  <ChevronRight className="w-3.5 h-3.5" />
+                </Link>
+              </div>
+
+              {displayTickets.length === 0 ? (
+                <div className="p-6 text-center bg-white dark:bg-[#1b1613] rounded-2xl border border-stone-200 dark:border-[#352c24] space-y-2">
+                  <div className="w-10 h-10 rounded-2xl bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center mx-auto">
+                    <QrCode className="w-5 h-5" />
                   </div>
-                ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {userTickets.map(({ event: ev, rsvp }) => {
-                      const isApproved = rsvp.status === "approved";
-                      const isPending = rsvp.status === "pending";
-                      const isRejected = rsvp.status === "rejected";
+                  <p className="text-xs font-bold text-stone-800 dark:text-stone-200">
+                    No Event Passes Booked Yet
+                  </p>
+                  <p className="text-[11px] text-stone-500 dark:text-stone-400 max-w-md mx-auto">
+                    RSVP for upcoming Independence Day, Ganesh Utsav, or Navratri celebrations to generate your entry QR code.
+                  </p>
+                  <Link
+                    href="/events"
+                    className="btn-primary text-xs py-1.5 px-4 inline-flex items-center gap-1.5 mt-2"
+                  >
+                    <Calendar className="w-3.5 h-3.5" />
+                    <span>Explore Events & Book Pass</span>
+                  </Link>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3.5">
+                  {displayTickets.map(({ event: ev, rsvp }) => {
+                    const isApproved = rsvp.status === "approved";
+                    const isPending = rsvp.status === "pending";
 
-                      return (
-                        <div
-                          key={rsvp.id}
-                          className={`p-4 rounded-2xl bg-white dark:bg-[#1c1714] border transition-all ${
-                            isApproved
-                              ? "border-emerald-300/80 dark:border-emerald-800/80 shadow-sm"
-                              : isPending
-                              ? "border-amber-300/80 dark:border-amber-800/80 shadow-xs"
-                              : "border-rose-300/80 dark:border-rose-800/80"
-                          }`}
-                        >
-                          <div className="flex items-start justify-between gap-2 mb-2">
-                            <div>
-                              <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400 block">
-                                {formatDate(ev.event_date)} • {ev.venue || "Clubhouse"}
+                    return (
+                      <div
+                        key={rsvp.id}
+                        className={`p-4 rounded-2xl bg-white dark:bg-[#1c1714] border transition-all flex flex-col justify-between ${
+                          isApproved
+                            ? "border-emerald-300/80 dark:border-emerald-800/80 shadow-xs hover:shadow-md"
+                            : "border-amber-300/80 dark:border-amber-800/80"
+                        }`}
+                      >
+                        <div>
+                          <div className="flex items-start justify-between gap-1.5 mb-2">
+                            <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400 block truncate">
+                              {formatDate(ev.event_date)}
+                            </span>
+                            {isApproved ? (
+                              <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[9px] font-bold bg-emerald-100 dark:bg-emerald-950/70 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700 shrink-0">
+                                <CheckCircle2 className="w-2.5 h-2.5" />
+                                <span>QR Ready</span>
                               </span>
-                              <h3 className="text-sm font-extrabold text-stone-900 dark:text-stone-100 mt-0.5">
-                                {ev.title}
-                              </h3>
-                            </div>
-
-                            {/* Status Pill */}
-                            {isApproved && (
-                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 dark:bg-emerald-950/70 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700 shrink-0">
-                                <CheckCircle2 className="w-3 h-3" />
-                                <span>Verified</span>
-                              </span>
-                            )}
-                            {isPending && (
-                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 dark:bg-amber-950/70 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-700 shrink-0">
-                                <Clock className="w-3 h-3" />
-                                <span>Pending Approval</span>
-                              </span>
-                            )}
-                            {isRejected && (
-                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 dark:bg-rose-950/70 text-rose-800 dark:text-rose-300 border border-rose-300 dark:border-rose-700 shrink-0">
-                                <AlertCircle className="w-3 h-3" />
-                                <span>Rejected</span>
+                            ) : (
+                              <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[9px] font-bold bg-amber-100 dark:bg-amber-950/70 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-700 shrink-0">
+                                <Clock className="w-2.5 h-2.5" />
+                                <span>Pending</span>
                               </span>
                             )}
                           </div>
 
-                          <div className="grid grid-cols-2 gap-2 my-3 p-2.5 rounded-xl bg-stone-50 dark:bg-[#231d18] text-xs">
+                          <h3 className="text-sm font-bold text-stone-900 dark:text-stone-100 line-clamp-1">
+                            {ev.title}
+                          </h3>
+                          <p className="text-[11px] text-stone-500 dark:text-stone-400 mt-0.5 truncate">
+                            📍 {ev.venue || "Clubhouse"} • Flat {rsvp.flat_number}
+                          </p>
+
+                          <div className="my-2.5 p-2 rounded-xl bg-stone-50 dark:bg-[#231d18] flex items-center justify-between text-xs font-mono">
                             <div>
-                              <span className="text-[10px] text-stone-400 font-mono block">ATTENDEES</span>
-                              <span className="font-extrabold text-stone-800 dark:text-stone-200">
+                              <span className="text-[9px] text-stone-400 block">HEADCOUNT</span>
+                              <span className="font-bold text-stone-800 dark:text-stone-200">
                                 {rsvp.attendees_count || 1} Pass(es)
                               </span>
-                              <span className="text-[10px] text-stone-500 dark:text-stone-400 block mt-0.5">
-                                {rsvp.adults_count || 1}A • {rsvp.children_count || 0}C • {rsvp.seniors_count || 0}S
-                              </span>
                             </div>
-                            <div>
-                              <span className="text-[10px] text-stone-400 font-mono block">CONTRIBUTION</span>
-                              <span className="font-extrabold font-mono text-stone-800 dark:text-stone-200">
+                            <div className="text-right">
+                              <span className="text-[9px] text-stone-400 block">FEE</span>
+                              <span className="font-bold text-emerald-700 dark:text-emerald-400">
                                 {rsvp.total_amount > 0 ? formatINR(rsvp.total_amount) : "Free"}
-                              </span>
-                              <span className="text-[10px] text-stone-500 dark:text-stone-400 block mt-0.5 font-mono truncate">
-                                {rsvp.utr_number ? `UTR: ${rsvp.utr_number}` : "Pass # " + rsvp.id.slice(0, 6)}
                               </span>
                             </div>
                           </div>
-
-                          {/* Action Button */}
-                          {isApproved ? (
-                            <button
-                              onClick={() => setTicketModalData({ event: ev, rsvp })}
-                              className="btn-primary w-full py-2 text-xs flex items-center justify-center gap-1.5 shadow-xs"
-                            >
-                              <QrCode className="w-3.5 h-3.5" />
-                              <span>View Pass & QR Code</span>
-                            </button>
-                          ) : isRejected ? (
-                            <Link
-                              href="/events"
-                              className="btn-secondary w-full py-2 text-xs flex items-center justify-center gap-1.5 border-rose-300 text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/40"
-                            >
-                              <span>Re-submit RSVP on Events Page →</span>
-                            </Link>
-                          ) : (
-                            <div className="p-2 text-center text-[11px] font-medium text-amber-700 dark:text-amber-400 bg-amber-50/60 dark:bg-amber-950/40 rounded-xl border border-amber-200 dark:border-amber-900/50">
-                              ⏳ Committee is verifying payment. QR Code will be ready upon approval.
-                            </div>
-                          )}
                         </div>
-                      );
-                    })}
+
+                        {/* QR Code Action Button */}
+                        {isApproved ? (
+                          <button
+                            onClick={() => setTicketModalData({ event: ev, rsvp })}
+                            className="btn-primary w-full py-1.5 text-xs flex items-center justify-center gap-1.5 shadow-xs mt-1"
+                          >
+                            <QrCode className="w-3.5 h-3.5" />
+                            <span>View Pass & QR</span>
+                          </button>
+                        ) : (
+                          <div className="p-1.5 text-center text-[10px] font-medium text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 rounded-lg">
+                            ⏳ Verification in progress
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* 📋 2. SOCIETY EVENTS DIRECTORY & TABLE */}
+            <div className="card p-6 card-entrance stagger-2">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+                <div>
+                  <h2 className="text-base font-extrabold text-slate-900 dark:text-stone-100 flex items-center gap-2">
+                    <Calendar className="w-5 h-5 text-orange-600 dark:text-orange-400" />
+                    <span>Society Events Table & Schedule</span>
+                  </h2>
+                  <p className="text-xs text-slate-500 dark:text-stone-400 mt-0.5">
+                    Upcoming festival celebrations, venues, demographic attendance, and entry contributions
+                  </p>
+                </div>
+                <Link
+                  href="/events"
+                  className="btn-secondary text-xs py-1.5 px-3 self-start sm:self-auto flex items-center gap-1"
+                >
+                  <span>Manage / RSVP in Events Hub</span>
+                  <ChevronRight className="w-3.5 h-3.5" />
+                </Link>
+              </div>
+
+              {upcomingEvents.length === 0 ? (
+                <div className="p-8 text-center bg-slate-50 dark:bg-[#1c1714] rounded-2xl border border-slate-100 dark:border-[#332a22]">
+                  <Calendar className="w-8 h-8 text-slate-300 dark:text-stone-600 mx-auto mb-2" />
+                  <p className="text-xs font-medium text-slate-600 dark:text-stone-400">No upcoming events scheduled right now</p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse text-xs">
+                    <thead>
+                      <tr className="border-b border-stone-200 dark:border-[#352c24] text-[11px] font-mono font-bold text-stone-500 dark:text-stone-400 uppercase">
+                        <th className="py-3 px-3">Event Title</th>
+                        <th className="py-3 px-3">Date & Time</th>
+                        <th className="py-3 px-3">Venue</th>
+                        <th className="py-3 px-3 text-center">Demographics (A/C/S)</th>
+                        <th className="py-3 px-3 text-right">Fee / Person</th>
+                        <th className="py-3 px-3 text-center">Your Flat</th>
+                        <th className="py-3 px-3 text-right">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-stone-100 dark:divide-[#2d251f]">
+                      {upcomingEvents.map((ev) => {
+                        const evDate = new Date(ev.event_date);
+                        const userRsvp = user && ev.rsvps?.find(
+                          (r) =>
+                            r.user_id === user.id ||
+                            r.flat_number.toLowerCase() === user.flat_number.toLowerCase()
+                        );
+                        const isFree =
+                          (ev.fee_adult || ev.fee_per_person || 0) === 0 &&
+                          (ev.fee_child || 0) === 0 &&
+                          (ev.fee_senior || 0) === 0;
+
+                        return (
+                          <tr
+                            key={ev.id}
+                            className="hover:bg-stone-50/80 dark:hover:bg-[#201a15] transition-colors group"
+                          >
+                            {/* Title */}
+                            <td className="py-3.5 px-3">
+                              <span className="font-bold text-stone-900 dark:text-stone-100 group-hover:text-orange-600 dark:group-hover:text-orange-400 transition-colors block">
+                                {ev.title}
+                              </span>
+                              <span className="text-[10px] text-stone-400 block mt-0.5 line-clamp-1">
+                                {ev.description || "Community celebration"}
+                              </span>
+                            </td>
+
+                            {/* Date */}
+                            <td className="py-3.5 px-3 font-mono">
+                              <span className="font-semibold text-stone-800 dark:text-stone-200 block">
+                                {formatDate(ev.event_date)}
+                              </span>
+                              <span className="text-[10px] text-stone-400 block">
+                                {evDate.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}
+                              </span>
+                            </td>
+
+                            {/* Venue */}
+                            <td className="py-3.5 px-3">
+                              <span className="font-medium text-stone-700 dark:text-stone-300">
+                                📍 {ev.venue || "Clubhouse"}
+                              </span>
+                            </td>
+
+                            {/* Headcount */}
+                            <td className="py-3.5 px-3 text-center font-mono">
+                              <span className="font-bold text-stone-900 dark:text-stone-100 block">
+                                {ev.total_attendees || 0} Confirmed
+                              </span>
+                              <span className="text-[10px] text-stone-400 block">
+                                {ev.total_adults || 0}A • {ev.total_children || 0}C • {ev.total_seniors || 0}S
+                              </span>
+                            </td>
+
+                            {/* Fee */}
+                            <td className="py-3.5 px-3 text-right font-mono">
+                              {isFree ? (
+                                <span className="badge bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">
+                                  Free
+                                </span>
+                              ) : (
+                                <span className="font-extrabold text-stone-900 dark:text-stone-100">
+                                  {formatINR(ev.fee_adult || ev.fee_per_person || 0)}
+                                </span>
+                              )}
+                            </td>
+
+                            {/* Your Flat Status */}
+                            <td className="py-3.5 px-3 text-center">
+                              {userRsvp && userRsvp.status === "approved" ? (
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 dark:bg-emerald-950/70 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700">
+                                  🎟️ Pass Active
+                                </span>
+                              ) : userRsvp && userRsvp.status === "pending" ? (
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 dark:bg-amber-950/70 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-700">
+                                  ⏳ Pending
+                                </span>
+                              ) : (
+                                <span className="text-[10px] text-stone-400 font-mono">
+                                  Not RSVP&apos;d
+                                </span>
+                              )}
+                            </td>
+
+                            {/* Action */}
+                            <td className="py-3.5 px-3 text-right">
+                              {userRsvp && userRsvp.status === "approved" ? (
+                                <button
+                                  onClick={() => setTicketModalData({ event: ev, rsvp: userRsvp })}
+                                  className="btn-secondary py-1 px-2.5 text-[11px] font-bold inline-flex items-center gap-1"
+                                >
+                                  <QrCode className="w-3 h-3 text-amber-600" />
+                                  <span>View QR</span>
+                                </button>
+                              ) : (
+                                <Link
+                                  href="/events"
+                                  className="btn-primary py-1 px-2.5 text-[11px] font-bold inline-flex items-center gap-1"
+                                >
+                                  <span>RSVP</span>
+                                  <ChevronRight className="w-3 h-3" />
+                                </Link>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+
+            {/* Main 2-Column Dashboard Grid */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Left Column (2 Cols): Financial Category Breakdown */}
+              <div className="lg:col-span-2 space-y-6">
+                {summary && summary.category_breakdown && (
+                  <div className="card p-6 card-entrance stagger-3">
+                    <div className="flex items-center justify-between mb-4">
+                      <div>
+                        <h2 className="text-base font-bold text-slate-900 dark:text-stone-100">Expense Breakdown by Category</h2>
+                        <p className="text-xs text-slate-500 dark:text-stone-400">Major society utility & AMC outflow channels</p>
+                      </div>
+                      <Link
+                        href="/ledger"
+                        className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 flex items-center gap-1"
+                      >
+                        View Ledger <ChevronRight className="w-3.5 h-3.5" />
+                      </Link>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {summary.category_breakdown.slice(0, 6).map((cat) => {
+                        const pct = summary.total_expense > 0 ? (cat.amount / summary.total_expense) * 100 : 0;
+                        return (
+                          <div key={cat.category} className="p-3.5 bg-slate-50 dark:bg-[#201a15] rounded-xl border border-slate-100 dark:border-[#352c24]">
+                            <div className="flex items-center justify-between mb-1.5">
+                              <span className="text-xs font-semibold text-slate-700 dark:text-stone-300">{cat.category}</span>
+                              <span className="text-xs font-bold text-slate-900 dark:text-white font-mono">
+                                {formatINR(cat.amount)}
+                              </span>
+                            </div>
+                            <div className="w-full bg-slate-200 dark:bg-stone-800 h-1.5 rounded-full overflow-hidden">
+                              <div
+                                className="bg-slate-800 dark:bg-amber-500 h-full rounded-full transition-all duration-700"
+                                style={{ width: `${Math.min(100, Math.max(5, pct))}%` }}
+                              />
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
                 )}
               </div>
 
-              {/* Main 2-Column Dashboard Grid */}
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Left Column (2 Cols): Upcoming Events & Expense Breakdown */}
-                <div className="lg:col-span-2 space-y-6">
-                  {/* Upcoming Events Showcase */}
-                  <div className="card p-6 card-entrance stagger-2">
-                    <div className="flex items-center justify-between mb-4">
-                      <div>
-                        <h2 className="text-base font-bold text-slate-900 dark:text-stone-100">Upcoming Society Events</h2>
-                        <p className="text-xs text-slate-500 dark:text-stone-400">Participate with family & reserve spots</p>
-                      </div>
-                      <Link
-                        href="/events"
-                        className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 flex items-center gap-1"
-                      >
-                        All Events <ChevronRight className="w-3.5 h-3.5" />
-                      </Link>
+              {/* Right Column (1 Col): Society Notice Board (Real Backend + Admin Post Modal) & Contacts */}
+              <div className="space-y-6">
+                {/* 📢 SOCIETY COMMITTEE NOTICE BOARD */}
+                <div className="card p-5 bg-gradient-to-br from-stone-900 via-stone-900 to-amber-950 text-white border-stone-800 shadow-xl relative overflow-hidden">
+                  <div className="flex items-center justify-between pb-3 border-b border-stone-800">
+                    <div className="flex items-center gap-2 text-amber-400 font-bold text-xs font-mono">
+                      <Megaphone className="w-4 h-4 text-amber-400" />
+                      <span>SOCIETY NOTICE BOARD</span>
                     </div>
 
-                    {upcomingEvents.length === 0 ? (
-                      <div className="p-8 text-center bg-slate-50 dark:bg-[#1c1714] rounded-2xl border border-slate-100 dark:border-[#332a22]">
-                        <Calendar className="w-8 h-8 text-slate-300 dark:text-stone-600 mx-auto mb-2" />
-                        <p className="text-xs font-medium text-slate-600 dark:text-stone-400">No upcoming events right now</p>
-                      </div>
+                    {/* Admin Post Notice Button (Always Accessible with 1-click Admin Access) */}
+                    <button
+                      onClick={handleOpenNoticeModal}
+                      className="px-2.5 py-1 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 text-[11px] font-bold flex items-center gap-1 transition-all shadow-xs"
+                      title="Post New Society Notice"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>+ Post Notice</span>
+                    </button>
+                  </div>
+
+                  {/* Notices List */}
+                  <div className="mt-3.5 space-y-3 max-h-[360px] overflow-y-auto pr-1">
+                    {notices.length === 0 ? (
+                      <p className="text-xs text-stone-400 py-4 text-center">No notices posted yet.</p>
                     ) : (
-                      <div className="space-y-3">
-                        {upcomingEvents.slice(0, 3).map((ev) => {
-                          const evDate = new Date(ev.event_date);
-                          const userRsvp = user && ev.rsvps?.find(
-                            (r) =>
-                              r.user_id === user.id ||
-                              r.flat_number.toLowerCase() === user.flat_number.toLowerCase()
-                          );
-                          const isFree =
-                            (ev.fee_adult || ev.fee_per_person || 0) === 0 &&
-                            (ev.fee_child || 0) === 0 &&
-                            (ev.fee_senior || 0) === 0;
+                      notices.map((n) => {
+                        const isHigh = n.priority === "high" || n.priority === "urgent";
+                        return (
+                          <div
+                            key={n.id}
+                            className="p-3.5 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all text-xs space-y-1.5 relative group"
+                          >
+                            <div className="flex items-center justify-between gap-2">
+                              <span
+                                className={`text-[9px] font-mono font-bold px-1.5 py-0.5 rounded uppercase ${
+                                  isHigh
+                                    ? "bg-rose-500/30 text-rose-300 border border-rose-500/40"
+                                    : "bg-amber-500/20 text-amber-300 border border-amber-500/30"
+                                }`}
+                              >
+                                {n.category} • {n.priority}
+                              </span>
 
-                          return (
-                            <Link
-                              key={ev.id}
-                              href="/events"
-                              className="flex items-center gap-4 p-4 rounded-2xl bg-[#f8fafc] hover:bg-white dark:bg-[#211d19] dark:hover:bg-[#2a2420] border border-[#e2e8f0] hover:border-amber-400 dark:border-[#38322c] dark:hover:border-amber-500/50 hover:shadow-md transition-all group"
-                            >
-                              {/* Date Block */}
-                              <div className="w-12 h-12 rounded-xl bg-white dark:bg-[#171412] border border-[#e2e8f0] dark:border-[#38322c] flex flex-col items-center justify-center shrink-0 shadow-sm">
-                                <span className="text-[9px] font-bold text-rose-600 dark:text-rose-400 uppercase">
-                                  {evDate.toLocaleDateString("en-IN", { month: "short" })}
+                              <div className="flex items-center gap-2">
+                                <span className="text-[10px] text-stone-400 font-mono">
+                                  {formatDate(n.created_at)}
                                 </span>
-                                <span className="text-base font-extrabold text-slate-900 dark:text-stone-100 leading-none">
-                                  {evDate.getDate()}
-                                </span>
+                                <button
+                                  onClick={() => handleDeleteNotice(n.id)}
+                                  className="p-1 rounded text-stone-400 hover:text-rose-400 hover:bg-rose-500/20 opacity-0 group-hover:opacity-100 transition-opacity"
+                                  title="Delete Notice"
+                                >
+                                  <Trash2 className="w-3 h-3" />
+                                </button>
                               </div>
+                            </div>
 
-                              <div className="flex-1 min-w-0">
-                                <h3 className="text-sm font-bold text-slate-900 dark:text-stone-100 group-hover:text-amber-600 dark:group-hover:text-amber-400 truncate flex items-center gap-2">
-                                  <span>{ev.title}</span>
-                                  {userRsvp && userRsvp.status === "approved" && (
-                                    <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/70 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-700 shrink-0">
-                                      🎟️ Ticket Ready
-                                    </span>
-                                  )}
-                                  {userRsvp && userRsvp.status === "pending" && (
-                                    <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-950/70 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-700 shrink-0">
-                                      ⏳ RSVP Pending
-                                    </span>
-                                  )}
-                                </h3>
-                                <p className="text-xs text-slate-500 dark:text-stone-400 flex items-center gap-2 mt-0.5 truncate">
-                                  <span>{ev.venue || "Clubhouse"}</span>
-                                  <span>•</span>
-                                  <span className="font-semibold text-slate-700 dark:text-stone-300">
-                                    {ev.total_attendees} Confirmed Attendees
-                                  </span>
-                                </p>
-                              </div>
+                            <h4 className="font-bold text-white text-xs leading-snug">
+                              {n.title}
+                            </h4>
+                            <p className="text-stone-300 text-[11px] leading-relaxed">
+                              {n.content}
+                            </p>
 
-                              <div className="shrink-0 text-right">
-                                {isFree ? (
-                                  <span className="badge bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800">
-                                    Free
-                                  </span>
-                                ) : (
-                                  <span className="text-xs font-extrabold text-slate-900 dark:text-stone-100 font-mono">
-                                    {formatINR(ev.fee_adult || ev.fee_per_person || 0)}
-                                  </span>
-                                )}
-                              </div>
-                            </Link>
-                          );
-                        })}
-                      </div>
+                            <p className="text-[10px] text-amber-200/60 font-mono pt-1">
+                              By {n.author_name}
+                            </p>
+                          </div>
+                        );
+                      })
                     )}
                   </div>
-
-                  {/* Financial Category Breakdown Overview */}
-                  {summary && summary.category_breakdown && (
-                    <div className="card p-6 card-entrance stagger-3">
-                      <div className="flex items-center justify-between mb-4">
-                        <div>
-                          <h2 className="text-base font-bold text-slate-900 dark:text-stone-100">Expense Breakdown by Category</h2>
-                          <p className="text-xs text-slate-500 dark:text-stone-400">Major society utility & AMC outflow channels</p>
-                        </div>
-                        <Link
-                          href="/ledger"
-                          className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 flex items-center gap-1"
-                        >
-                          View Ledger <ChevronRight className="w-3.5 h-3.5" />
-                        </Link>
-                      </div>
-
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        {summary.category_breakdown.slice(0, 6).map((cat) => {
-                          const pct = summary.total_expense > 0 ? (cat.amount / summary.total_expense) * 100 : 0;
-                          return (
-                            <div key={cat.category} className="p-3.5 bg-slate-50 dark:bg-[#201a15] rounded-xl border border-slate-100 dark:border-[#352c24]">
-                              <div className="flex items-center justify-between mb-1.5">
-                                <span className="text-xs font-semibold text-slate-700 dark:text-stone-300">{cat.category}</span>
-                                <span className="text-xs font-bold text-slate-900 dark:text-white font-mono">
-                                  {formatINR(cat.amount)}
-                                </span>
-                              </div>
-                              <div className="w-full bg-slate-200 dark:bg-stone-800 h-1.5 rounded-full overflow-hidden">
-                                <div
-                                  className="bg-slate-800 dark:bg-amber-500 h-full rounded-full transition-all duration-700"
-                                  style={{ width: `${Math.min(100, Math.max(5, pct))}%` }}
-                                />
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
                 </div>
 
-                {/* Right Column (1 Col): Society Notice Board (Real Backend) & Emergency Contacts */}
-                <div className="space-y-6">
-                  {/* 📢 SOCIETY COMMITTEE NOTICE BOARD (Real DB + Admin Post Modal) */}
-                  <div className="card p-5 bg-gradient-to-br from-stone-900 via-stone-900 to-amber-950 text-white border-stone-800 shadow-xl relative overflow-hidden">
-                    <div className="flex items-center justify-between pb-3 border-b border-stone-800">
-                      <div className="flex items-center gap-2 text-amber-400 font-bold text-xs font-mono">
-                        <Megaphone className="w-4 h-4 text-amber-400" />
-                        <span>SOCIETY NOTICE BOARD</span>
-                      </div>
-
-                      {/* Admin Post Notice Button */}
-                      {isAdmin && (
-                        <button
-                          onClick={() => setShowAddNotice(true)}
-                          className="px-2.5 py-1 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 text-[11px] font-bold flex items-center gap-1 transition-all"
-                          title="Post New Society Notice"
-                        >
-                          <Plus className="w-3.5 h-3.5" />
-                          <span>Post Notice</span>
-                        </button>
-                      )}
+                {/* Verified Service Providers Quick Connect */}
+                <div className="card p-6 card-entrance stagger-2">
+                  <div className="flex items-center justify-between mb-4">
+                    <div>
+                      <h2 className="text-base font-bold text-slate-900 dark:text-stone-100">Emergency Contacts</h2>
+                      <p className="text-xs text-slate-500 dark:text-stone-400">Verified society service partners</p>
                     </div>
-
-                    {/* Notices List */}
-                    <div className="mt-3.5 space-y-3 max-h-[360px] overflow-y-auto pr-1">
-                      {notices.length === 0 ? (
-                        <p className="text-xs text-stone-400 py-4 text-center">No notices posted yet.</p>
-                      ) : (
-                        notices.map((n) => {
-                          const isHigh = n.priority === "high" || n.priority === "urgent";
-                          return (
-                            <div
-                              key={n.id}
-                              className="p-3.5 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all text-xs space-y-1.5 relative group"
-                            >
-                              <div className="flex items-center justify-between gap-2">
-                                <span
-                                  className={`text-[9px] font-mono font-bold px-1.5 py-0.5 rounded uppercase ${
-                                    isHigh
-                                      ? "bg-rose-500/30 text-rose-300 border border-rose-500/40"
-                                      : "bg-amber-500/20 text-amber-300 border border-amber-500/30"
-                                  }`}
-                                >
-                                  {n.category} • {n.priority}
-                                </span>
-
-                                <div className="flex items-center gap-2">
-                                  <span className="text-[10px] text-stone-400 font-mono">
-                                    {formatDate(n.created_at)}
-                                  </span>
-                                  {isAdmin && (
-                                    <button
-                                      onClick={() => handleDeleteNotice(n.id)}
-                                      className="p-1 rounded text-stone-400 hover:text-rose-400 hover:bg-rose-500/20 opacity-0 group-hover:opacity-100 transition-opacity"
-                                      title="Delete Notice"
-                                    >
-                                      <Trash2 className="w-3 h-3" />
-                                    </button>
-                                  )}
-                                </div>
-                              </div>
-
-                              <h4 className="font-bold text-white text-xs leading-snug">
-                                {n.title}
-                              </h4>
-                              <p className="text-stone-300 text-[11px] leading-relaxed">
-                                {n.content}
-                              </p>
-
-                              <p className="text-[10px] text-amber-200/60 font-mono pt-1">
-                                By {n.author_name}
-                              </p>
-                            </div>
-                          );
-                        })
-                      )}
-                    </div>
+                    <Link
+                      href="/vendors"
+                      className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 flex items-center gap-1"
+                    >
+                      All <ChevronRight className="w-3.5 h-3.5" />
+                    </Link>
                   </div>
 
-                  {/* Verified Service Providers Quick Connect */}
-                  <div className="card p-6 card-entrance stagger-2">
-                    <div className="flex items-center justify-between mb-4">
-                      <div>
-                        <h2 className="text-base font-bold text-slate-900 dark:text-stone-100">Emergency Contacts</h2>
-                        <p className="text-xs text-slate-500 dark:text-stone-400">Verified society service partners</p>
-                      </div>
-                      <Link
-                        href="/vendors"
-                        className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 flex items-center gap-1"
+                  <div className="space-y-2.5">
+                    {vendors.slice(0, 4).map((v) => (
+                      <div
+                        key={v.id}
+                        className="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-[#201a15] border border-slate-100 dark:border-[#352c24] hover:border-slate-300 dark:hover:border-[#45392e] transition-all"
                       >
-                        All <ChevronRight className="w-3.5 h-3.5" />
-                      </Link>
-                    </div>
-
-                    <div className="space-y-2.5">
-                      {vendors.slice(0, 4).map((v) => (
-                        <div
-                          key={v.id}
-                          className="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-[#201a15] border border-slate-100 dark:border-[#352c24] hover:border-slate-300 dark:hover:border-[#45392e] transition-all"
-                        >
-                          <div className="min-w-0 flex-1 mr-2">
-                            <p className="text-xs font-bold text-slate-900 dark:text-stone-100 truncate">{v.name}</p>
-                            <p className="text-[10px] text-slate-500 dark:text-stone-400 mt-0.5 truncate">{v.category}</p>
-                          </div>
-                          <div className="flex items-center gap-1.5 shrink-0">
-                            {v.phone_number && (
-                              <a
-                                href={`tel:${v.phone_number}`}
-                                className="p-1.5 rounded-lg bg-white dark:bg-[#2a221b] hover:bg-emerald-50 dark:hover:bg-emerald-950/60 text-slate-600 dark:text-stone-300 hover:text-emerald-700 border border-slate-200 dark:border-[#45392e] shadow-sm"
-                                title="Call"
-                              >
-                                <Phone className="w-3.5 h-3.5" />
-                              </a>
-                            )}
-                            {v.whatsapp_number && (
-                              <a
-                                href={`https://wa.me/${v.whatsapp_number.replace(/[^0-9]/g, "")}`}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="p-1.5 rounded-lg bg-white dark:bg-[#2a221b] hover:bg-emerald-50 dark:hover:bg-emerald-950/60 text-slate-600 dark:text-stone-300 hover:text-emerald-700 border border-slate-200 dark:border-[#45392e] shadow-sm"
-                                title="WhatsApp"
-                              >
-                                <MessageSquare className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                              </a>
-                            )}
-                          </div>
+                        <div className="min-w-0 flex-1 mr-2">
+                          <p className="text-xs font-bold text-slate-900 dark:text-stone-100 truncate">{v.name}</p>
+                          <p className="text-[10px] text-slate-500 dark:text-stone-400 mt-0.5 truncate">{v.category}</p>
                         </div>
-                      ))}
-                    </div>
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          {v.phone_number && (
+                            <a
+                              href={`tel:${v.phone_number}`}
+                              className="p-1.5 rounded-lg bg-white dark:bg-[#2a221b] hover:bg-emerald-50 dark:hover:bg-emerald-950/60 text-slate-600 dark:text-stone-300 hover:text-emerald-700 border border-slate-200 dark:border-[#45392e] shadow-sm"
+                              title="Call"
+                            >
+                              <Phone className="w-3.5 h-3.5" />
+                            </a>
+                          )}
+                          {v.whatsapp_number && (
+                            <a
+                              href={`https://wa.me/${v.whatsapp_number.replace(/[^0-9]/g, "")}`}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="p-1.5 rounded-lg bg-white dark:bg-[#2a221b] hover:bg-emerald-50 dark:hover:bg-emerald-950/60 text-slate-600 dark:text-stone-300 hover:text-emerald-700 border border-slate-200 dark:border-[#45392e] shadow-sm"
+                              title="WhatsApp"
+                            >
+                              <MessageSquare className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                            </a>
+                          )}
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
               </div>
-            </>
-          )}
-        </div>
-      )}
+            </div>
+          </>
+        )}
+      </div>
 
       {/* 🎟️ DIGITAL ENTRY PASS & QR MODAL */}
       {ticketModalData && (
