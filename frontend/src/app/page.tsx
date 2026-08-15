@@ -700,21 +700,21 @@ export default function DashboardPage() {
             </div>
 
             {/* 📢 2. SOCIETY COMMITTEE NOTICE BOARD */}
-            <div className="card p-6 bg-gradient-to-br from-stone-900 via-stone-900 to-amber-950 text-white border-stone-800 shadow-xl relative overflow-hidden">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-stone-800">
+            <div className="card p-6 bg-gradient-to-br from-amber-500/10 via-orange-500/5 to-amber-500/5 dark:from-stone-900 dark:via-stone-900 dark:to-amber-950 text-stone-900 dark:text-white border-amber-300/80 dark:border-stone-800 shadow-sm dark:shadow-xl relative overflow-hidden">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-amber-200/60 dark:border-stone-800">
                 <div>
-                  <div className="flex items-center gap-2 text-amber-400 font-bold text-sm font-mono">
-                    <Megaphone className="w-5 h-5 text-amber-400" />
+                  <div className="flex items-center gap-2 text-amber-800 dark:text-amber-400 font-extrabold text-sm font-mono">
+                    <Megaphone className="w-5 h-5 text-amber-600 dark:text-amber-400" />
                     <span>SOCIETY NOTICE BOARD & OFFICIAL BROADCASTS</span>
                   </div>
-                  <p className="text-xs text-stone-300 mt-1">
+                  <p className="text-xs text-stone-600 dark:text-stone-300 mt-1">
                     Live announcements, scheduled maintenance, and statutory committee circulars for Tower 24
                   </p>
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2">
                   {/* Category Filter Pills */}
-                  <div className="flex items-center gap-1 bg-white/10 p-1 rounded-xl border border-white/10 text-xs">
+                  <div className="flex items-center gap-1 bg-white/90 dark:bg-white/10 p-1 rounded-xl border border-stone-200 dark:border-white/10 text-xs shadow-xs">
                     {["All", "Maintenance", "Festival", "Financial"].map((cat) => (
                       <button
                         key={cat}
@@ -722,7 +722,7 @@ export default function DashboardPage() {
                         className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all ${
                           selectedNoticeCategory === cat
                             ? "bg-amber-500 text-stone-950 shadow-xs"
-                            : "text-stone-300 hover:text-white"
+                            : "text-stone-600 dark:text-stone-300 hover:text-stone-900 dark:hover:text-white"
                         }`}
                       >
                         {cat}
@@ -745,7 +745,7 @@ export default function DashboardPage() {
               {/* Notice Cards Grid */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3.5 mt-5">
                 {filteredNotices.length === 0 ? (
-                  <div className="col-span-full py-8 text-center text-stone-400 text-xs">
+                  <div className="col-span-full py-8 text-center text-stone-500 dark:text-stone-400 text-xs">
                     No notices available in this category.
                   </div>
                 ) : (
@@ -756,7 +756,7 @@ export default function DashboardPage() {
                     return (
                       <div
                         key={n.id}
-                        className="p-4 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 transition-all flex flex-col justify-between space-y-3 relative group"
+                        className="p-4 rounded-2xl bg-white dark:bg-[#1a1512] hover:bg-amber-50/50 dark:hover:bg-[#221c18] border border-stone-200 dark:border-[#383028] shadow-xs hover:shadow-md transition-all flex flex-col justify-between space-y-3 relative group"
                       >
                         <div className="space-y-2">
                           <div className="flex items-center justify-between gap-2">
@@ -765,20 +765,20 @@ export default function DashboardPage() {
                                 isUrgent
                                   ? "bg-rose-500 text-white shadow-xs"
                                   : isHigh
-                                  ? "bg-rose-500/30 text-rose-300 border border-rose-500/40"
-                                  : "bg-amber-500/20 text-amber-300 border border-amber-500/30"
+                                  ? "bg-rose-100 dark:bg-rose-950 text-rose-800 dark:text-rose-300 border border-rose-300 dark:border-rose-800"
+                                  : "bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-800"
                               }`}
                             >
                               {n.category} • {n.priority}
                             </span>
 
                             <div className="flex items-center gap-1.5">
-                              <span className="text-[10px] text-stone-400 font-mono">
+                              <span className="text-[10px] text-stone-500 dark:text-stone-400 font-mono">
                                 {formatDate(n.created_at)}
                               </span>
                               <button
                                 onClick={() => handleDeleteNotice(n.id)}
-                                className="p-1 rounded text-stone-400 hover:text-rose-400 hover:bg-rose-500/20 opacity-0 group-hover:opacity-100 transition-opacity"
+                                className="p-1 rounded text-stone-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 opacity-0 group-hover:opacity-100 transition-opacity"
                                 title="Delete Notice"
                               >
                                 <Trash2 className="w-3 h-3" />
@@ -786,17 +786,17 @@ export default function DashboardPage() {
                             </div>
                           </div>
 
-                          <h4 className="font-bold text-white text-xs leading-snug">
+                          <h4 className="font-extrabold text-stone-900 dark:text-stone-100 text-xs leading-snug">
                             {n.title}
                           </h4>
-                          <p className="text-stone-300 text-[11px] leading-relaxed line-clamp-3">
+                          <p className="text-stone-700 dark:text-stone-300 text-[11px] leading-relaxed line-clamp-3 font-medium">
                             {n.content}
                           </p>
                         </div>
 
-                        <div className="pt-2 border-t border-white/10 flex items-center justify-between text-[10px] text-amber-200/70 font-mono">
+                        <div className="pt-2 border-t border-stone-100 dark:border-[#2e2620] flex items-center justify-between text-[10px] text-stone-500 dark:text-stone-400 font-mono">
                           <span className="truncate">By {n.author_name}</span>
-                          <span className="shrink-0 text-amber-400 font-bold">Official</span>
+                          <span className="shrink-0 text-amber-700 dark:text-amber-400 font-bold">Official</span>
                         </div>
                       </div>
                     );
