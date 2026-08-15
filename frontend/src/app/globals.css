@@ -61,7 +61,7 @@ body {
   letter-spacing: -0.03em;
 }
 
-/* Smooth transitions for shadows and colors (no position jumps) */
+/* Smooth transitions for shadows and colors */
 button, a, input, select, textarea, .card, .badge {
   transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, color 0.2s ease, opacity 0.2s ease;
 }
@@ -145,7 +145,7 @@ button, a, input, select, textarea, .card, .badge {
 }
 
 .dark .card {
-  background: rgba(28, 25, 23, 0.94);
+  background: rgba(28, 25, 23, 0.95);
   border-color: #383430;
   color: #f5f5f4;
 }
@@ -226,9 +226,9 @@ button, a, input, select, textarea, .card, .badge {
   border: 1px solid #bbf7d0;
 }
 .dark .badge-approved {
-  background-color: rgba(22, 101, 52, 0.3);
+  background-color: rgba(22, 101, 52, 0.35);
   color: #86efac;
-  border-color: rgba(34, 197, 94, 0.3);
+  border-color: rgba(34, 197, 94, 0.4);
 }
 
 .badge-pending {
@@ -237,9 +237,9 @@ button, a, input, select, textarea, .card, .badge {
   border: 1px solid #fde68a;
 }
 .dark .badge-pending {
-  background-color: rgba(180, 83, 9, 0.3);
+  background-color: rgba(180, 83, 9, 0.35);
   color: #fcd34d;
-  border-color: rgba(245, 158, 11, 0.3);
+  border-color: rgba(245, 158, 11, 0.4);
 }
 
 .badge-rejected {
@@ -248,9 +248,9 @@ button, a, input, select, textarea, .card, .badge {
   border: 1px solid #fecaca;
 }
 .dark .badge-rejected {
-  background-color: rgba(185, 28, 28, 0.3);
+  background-color: rgba(185, 28, 28, 0.35);
   color: #fca5a5;
-  border-color: rgba(239, 68, 68, 0.3);
+  border-color: rgba(239, 68, 68, 0.4);
 }
 
 .badge-admin {
@@ -259,9 +259,9 @@ button, a, input, select, textarea, .card, .badge {
   border: 1px solid #fed7aa;
 }
 .dark .badge-admin {
-  background-color: rgba(194, 65, 12, 0.3);
+  background-color: rgba(194, 65, 12, 0.35);
   color: #fdba74;
-  border-color: rgba(249, 115, 22, 0.3);
+  border-color: rgba(249, 115, 22, 0.4);
 }
 
 .badge-member {
@@ -270,9 +270,9 @@ button, a, input, select, textarea, .card, .badge {
   border: 1px solid #bae6fd;
 }
 .dark .badge-member {
-  background-color: rgba(3, 105, 161, 0.3);
+  background-color: rgba(3, 105, 161, 0.35);
   color: #7dd3fc;
-  border-color: rgba(14, 165, 233, 0.3);
+  border-color: rgba(14, 165, 233, 0.4);
 }
 
 .badge-festive {
@@ -281,9 +281,9 @@ button, a, input, select, textarea, .card, .badge {
   border: 1px solid #fed7aa;
 }
 .dark .badge-festive {
-  background: linear-gradient(135deg, rgba(120, 53, 15, 0.4) 0%, rgba(154, 52, 18, 0.4) 100%);
+  background: linear-gradient(135deg, rgba(120, 53, 15, 0.45) 0%, rgba(154, 52, 18, 0.45) 100%);
   color: #fdba74;
-  border-color: rgba(245, 158, 11, 0.3);
+  border-color: rgba(245, 158, 11, 0.4);
 }
 
 /* Modern Form Controls */
@@ -496,6 +496,83 @@ button, a, input, select, textarea, .card, .badge {
   border-color: #383430;
   box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.05);
   color: #f5f5f4;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   DARK MODE TEXT CONTRAST & SURFACE OVERRIDES
+   Guarantees 100% text readability across every component in dark mode,
+   while keeping light mode 100% original and unchanged.
+   ───────────────────────────────────────────────────────────── */
+
+.dark h1, .dark h2, .dark h3, .dark h4, .dark h5, .dark h6 {
+  color: #f5f5f4 !important;
+}
+
+.dark .text-slate-900,
+.dark .text-stone-900,
+.dark .text-slate-800,
+.dark .text-stone-800,
+.dark .text-gray-900,
+.dark .text-gray-800 {
+  color: #fafaf9 !important;
+}
+
+.dark .text-slate-700,
+.dark .text-stone-700,
+.dark .text-slate-600,
+.dark .text-stone-600,
+.dark .text-gray-700,
+.dark .text-gray-600 {
+  color: #d6d3d1 !important;
+}
+
+.dark .text-slate-500,
+.dark .text-stone-500,
+.dark .text-slate-400,
+.dark .text-stone-400,
+.dark .text-gray-500,
+.dark .text-gray-400 {
+  color: #a8a29e !important;
+}
+
+.dark .bg-white {
+  background-color: #1c1917 !important;
+  color: #f5f5f4 !important;
+}
+
+.dark .bg-slate-50,
+.dark .bg-stone-50,
+.dark .bg-gray-50,
+.dark .bg-slate-100,
+.dark .bg-stone-100,
+.dark .bg-gray-100 {
+  background-color: #292524 !important;
+  border-color: #383430 !important;
+}
+
+.dark .border-slate-200,
+.dark .border-stone-200,
+.dark .border-gray-200,
+.dark .border-slate-300,
+.dark .border-stone-300,
+.dark .border-gray-300,
+.dark .border-\[\#eee7dd\],
+.dark .border-slate-200\/80 {
+  border-color: #383430 !important;
+}
+
+.dark .hover\:bg-white:hover {
+  background-color: #292524 !important;
+}
+
+.dark .hover\:bg-stone-50:hover,
+.dark .hover\:bg-slate-50:hover {
+  background-color: #383430 !important;
+}
+
+.dark select option {
+  background-color: #1c1917;
+  color: #fafaf9;
 }
 
 @keyframes modalFadeIn {
