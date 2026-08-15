@@ -40,6 +40,7 @@ body {
   letter-spacing: -0.01em;
   overflow-x: hidden;
   position: relative;
+  transition: background-color 0.25s ease, color 0.25s ease;
 }
 
 /* Monospace font utility for numbers, currency, and reference codes */
@@ -117,13 +118,12 @@ button, a, input, select, textarea, .card, .badge {
   border-radius: 24px;
   border: 1px solid #eee7dd;
   box-shadow: var(--card-shadow);
-  transition: box-shadow 0.25s ease, border-color 0.2s ease;
+  transition: box-shadow 0.25s ease, border-color 0.2s ease, background-color 0.25s ease;
 }
 
 .card:hover {
   box-shadow: var(--card-shadow-hover);
   border-color: #dfd5c6;
-  /* Steady: no translateY jump on hover */
 }
 
 /* High-Impact Stat Cards with Indian Festive Tones */
@@ -224,6 +224,10 @@ button, a, input, select, textarea, .card, .badge {
   background-color: #ffffff;
   outline: none;
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.form-input-search {
+  padding-left: 2.75rem !important;
 }
 
 .form-input:focus {
@@ -387,3 +391,295 @@ button, a, input, select, textarea, .card, .badge {
     transform: translateY(0);
   }
 }
+
+/* ═════════════════════════════════════════════════════════════
+   DARK MODE SYSTEM (HIGH-CONTRAST & FLAWLESS READABILITY)
+   Active ONLY when .dark is present on <html> or <body>.
+   Light mode remains 100% original, untouched, and identical.
+   ═════════════════════════════════════════════════════════════ */
+
+.dark {
+  color-scheme: dark;
+}
+
+.dark body {
+  background-color: #0f0d0b !important;
+  color: #f5f5f4 !important;
+}
+
+/* Top Header Bar */
+.dark header {
+  background-color: rgba(15, 13, 11, 0.96) !important;
+  border-color: #26221f !important;
+}
+
+/* All Cards and Elevated Surfaces */
+.dark .card {
+  background-color: rgba(23, 20, 18, 0.96) !important;
+  border-color: #2e2a26 !important;
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.5) !important;
+  color: #f5f5f4 !important;
+}
+
+.dark .card:hover {
+  border-color: #443e38 !important;
+  box-shadow: 0 10px 25px -4px rgba(0, 0, 0, 0.65) !important;
+}
+
+/* Inner subcards & table backgrounds */
+.dark .bg-white {
+  background-color: #171412 !important;
+  border-color: #2e2a26 !important;
+  color: #f5f5f4 !important;
+}
+
+.dark .bg-slate-50,
+.dark .bg-stone-50,
+.dark .bg-gray-50,
+.dark .bg-slate-100,
+.dark .bg-stone-100,
+.dark .bg-gray-100 {
+  background-color: #211d19 !important;
+  border-color: #332d28 !important;
+}
+
+.dark .hover\:bg-white:hover {
+  background-color: #26221d !important;
+}
+
+.dark .hover\:bg-stone-50:hover,
+.dark .hover\:bg-slate-50:hover {
+  background-color: #2d2722 !important;
+}
+
+/* General Borders */
+.dark .border-slate-200,
+.dark .border-stone-200,
+.dark .border-gray-200,
+.dark .border-slate-300,
+.dark .border-stone-300,
+.dark .border-\[\#eee7dd\],
+.dark .border-slate-200\/80 {
+  border-color: #2e2a26 !important;
+}
+
+/* Headings & Bold Titles */
+.dark h1, .dark h2, .dark h3, .dark h4, .dark h5, .dark h6,
+.dark .text-slate-900,
+.dark .text-stone-900,
+.dark .text-gray-900,
+.dark .text-slate-800,
+.dark .text-stone-800,
+.dark .text-gray-800 {
+  color: #fafaf9 !important;
+}
+
+/* Primary Body & Description Text */
+.dark .text-slate-700,
+.dark .text-stone-700,
+.dark .text-gray-700,
+.dark .text-slate-600,
+.dark .text-stone-600,
+.dark .text-gray-600 {
+  color: #d6d3d1 !important;
+}
+
+/* Muted & Secondary Information */
+.dark .text-slate-500,
+.dark .text-stone-500,
+.dark .text-gray-500,
+.dark .text-slate-400,
+.dark .text-stone-400,
+.dark .text-gray-400 {
+  color: #a8a29e !important;
+}
+
+/* Form Controls */
+.dark .form-input,
+.dark input,
+.dark textarea,
+.dark select {
+  background-color: #171412 !important;
+  border-color: #38322c !important;
+  color: #fafaf9 !important;
+}
+
+.dark .form-input:focus,
+.dark input:focus {
+  border-color: #f59e0b !important;
+  box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.25) !important;
+}
+
+.dark .form-input::placeholder,
+.dark input::placeholder {
+  color: #78716c !important;
+}
+
+.dark .form-label {
+  color: #e7e5e4 !important;
+}
+
+/* Form Select Dropdown Options */
+.dark select option {
+  background-color: #171412 !important;
+  color: #fafaf9 !important;
+}
+
+/* Filter Pill Tabs */
+.dark .tab-pill-inactive {
+  background-color: #171412 !important;
+  border-color: #2e2a26 !important;
+  color: #d6d3d1 !important;
+}
+
+.dark .tab-pill-inactive:hover {
+  background-color: #26221d !important;
+  color: #ffffff !important;
+}
+
+.dark .tab-pill-active {
+  background: linear-gradient(135deg, #ea580c 0%, #d97706 100%) !important;
+  color: #ffffff !important;
+  border-color: transparent !important;
+  box-shadow: 0 3px 12px rgba(234, 88, 12, 0.35) !important;
+}
+
+/* Secondary & Ghost Buttons */
+.dark .btn-secondary {
+  background-color: #26221d !important;
+  border-color: #38322c !important;
+  color: #f5f5f4 !important;
+}
+
+.dark .btn-secondary:hover {
+  background-color: #332d26 !important;
+  color: #ffffff !important;
+}
+
+.dark .btn-ghost {
+  color: #d6d3d1 !important;
+}
+
+.dark .btn-ghost:hover {
+  background-color: #26221d !important;
+  color: #ffffff !important;
+}
+
+/* Status Badges */
+.dark .badge-approved,
+.dark .bg-emerald-50,
+.dark .bg-green-50,
+.dark .bg-emerald-100 {
+  background-color: rgba(6, 78, 59, 0.45) !important;
+  color: #86efac !important;
+  border-color: rgba(34, 197, 94, 0.45) !important;
+}
+
+.dark .badge-pending,
+.dark .bg-amber-50,
+.dark .bg-yellow-50,
+.dark .bg-amber-100 {
+  background-color: rgba(120, 53, 15, 0.45) !important;
+  color: #fde047 !important;
+  border-color: rgba(245, 158, 11, 0.45) !important;
+}
+
+.dark .badge-rejected,
+.dark .bg-rose-50,
+.dark .bg-red-50,
+.dark .bg-rose-100 {
+  background-color: rgba(136, 19, 55, 0.45) !important;
+  color: #fda4af !important;
+  border-color: rgba(244, 63, 94, 0.45) !important;
+}
+
+.dark .badge-admin,
+.dark .bg-orange-50,
+.dark .bg-orange-100 {
+  background-color: rgba(124, 45, 18, 0.45) !important;
+  color: #fdba74 !important;
+  border-color: rgba(249, 115, 22, 0.45) !important;
+}
+
+.dark .badge-member,
+.dark .bg-blue-50,
+.dark .bg-sky-50,
+.dark .bg-blue-100 {
+  background-color: rgba(12, 74, 110, 0.45) !important;
+  color: #93c5fd !important;
+  border-color: rgba(56, 189, 248, 0.45) !important;
+}
+
+.dark .badge-festive {
+  background: linear-gradient(135deg, rgba(120, 53, 15, 0.5) 0%, rgba(154, 52, 18, 0.5) 100%) !important;
+  color: #fde047 !important;
+  border-color: rgba(245, 158, 11, 0.45) !important;
+}
+
+/* Modals */
+.dark .modal-backdrop {
+  background: rgba(10, 8, 7, 0.85) !important;
+}
+
+.dark .modal-content {
+  background-color: #191613 !important;
+  border-color: #332c26 !important;
+  box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.9) !important;
+  color: #f5f5f4 !important;
+}
+
+/* Dark Mode KPI Stat Cards */
+.dark .stat-card-income {
+  background: linear-gradient(135deg, #2a1e05 0%, #3f2e08 100%) !important;
+  border: 1px solid #854d0e !important;
+  box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.6) !important;
+  color: #fef08a !important;
+}
+.dark .stat-card-income span,
+.dark .stat-card-income p,
+.dark .stat-card-income div {
+  color: #fef08a !important;
+}
+.dark .stat-card-income .bg-emerald-100 {
+  background-color: rgba(202, 138, 4, 0.3) !important;
+}
+
+.dark .stat-card-expense {
+  background: linear-gradient(135deg, #2e0811 0%, #430c19 100%) !important;
+  border: 1px solid #9f1239 !important;
+  box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.6) !important;
+  color: #fecdd3 !important;
+}
+.dark .stat-card-expense span,
+.dark .stat-card-expense p,
+.dark .stat-card-expense div {
+  color: #fecdd3 !important;
+}
+.dark .stat-card-expense .bg-rose-100 {
+  background-color: rgba(225, 29, 72, 0.3) !important;
+}
+
+.dark .stat-card-neutral {
+  background: linear-gradient(135deg, #072722 0%, #0d3831 100%) !important;
+  border: 1px solid #0f766e !important;
+  box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.6) !important;
+  color: #99f6e4 !important;
+}
+.dark .stat-card-neutral span,
+.dark .stat-card-neutral p,
+.dark .stat-card-neutral div {
+  color: #99f6e4 !important;
+}
+.dark .stat-card-neutral .bg-slate-200\/80,
+.dark .stat-card-neutral .bg-slate-200 {
+  background-color: rgba(15, 118, 110, 0.35) !important;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: #332d28;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #4a423b;
+}
+

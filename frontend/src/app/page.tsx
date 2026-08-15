@@ -178,19 +178,19 @@ export default function DashboardPage() {
                 {/* 2. Total Inflow */}
                 <div className="stat-card-income p-5 rounded-2xl flex flex-col justify-between card-entrance stagger-2">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-emerald-800 font-mono">TOTAL INFLOW</span>
-                    <div className="w-8 h-8 rounded-xl bg-emerald-100 flex items-center justify-center">
-                      <TrendingUp className="w-4 h-4 text-emerald-700" />
+                    <span className="text-xs font-bold text-emerald-800 dark:text-amber-300 font-mono">TOTAL INFLOW</span>
+                    <div className="w-8 h-8 rounded-xl bg-emerald-100 dark:bg-amber-900/50 flex items-center justify-center">
+                      <TrendingUp className="w-4 h-4 text-emerald-700 dark:text-amber-300" />
                     </div>
                   </div>
                   <div className="mt-4">
-                    <p className="text-2xl font-extrabold text-emerald-950 font-mono">
+                    <p className="text-2xl font-extrabold text-emerald-950 dark:text-amber-100 font-mono">
                       <AnimatedCounter
                         value={summary?.total_income || 0}
                         formatter={(val) => `+${formatINR(val)}`}
                       />
                     </p>
-                    <p className="text-[11px] text-emerald-700 font-medium mt-1">
+                    <p className="text-[11px] text-emerald-700 dark:text-amber-200/90 font-medium mt-1">
                       Maintenance & Event RSVPs
                     </p>
                   </div>
@@ -199,19 +199,19 @@ export default function DashboardPage() {
                 {/* 3. Total Outflow */}
                 <div className="stat-card-expense p-5 rounded-2xl flex flex-col justify-between card-entrance stagger-3">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-rose-800 font-mono">TOTAL OUTFLOW</span>
-                    <div className="w-8 h-8 rounded-xl bg-rose-100 flex items-center justify-center">
-                      <TrendingDown className="w-4 h-4 text-rose-700" />
+                    <span className="text-xs font-bold text-rose-800 dark:text-rose-300 font-mono">TOTAL OUTFLOW</span>
+                    <div className="w-8 h-8 rounded-xl bg-rose-100 dark:bg-rose-900/50 flex items-center justify-center">
+                      <TrendingDown className="w-4 h-4 text-rose-700 dark:text-rose-300" />
                     </div>
                   </div>
                   <div className="mt-4">
-                    <p className="text-2xl font-extrabold text-rose-950 font-mono">
+                    <p className="text-2xl font-extrabold text-rose-950 dark:text-rose-100 font-mono">
                       <AnimatedCounter
                         value={summary?.total_expense || 0}
                         formatter={(val) => `-${formatINR(val)}`}
                       />
                     </p>
-                    <p className="text-[11px] text-rose-700 font-medium mt-1">
+                    <p className="text-[11px] text-rose-700 dark:text-rose-200/90 font-medium mt-1">
                       Utilities & Vendor Invoices
                     </p>
                   </div>
@@ -220,19 +220,19 @@ export default function DashboardPage() {
                 {/* 4. Active Events */}
                 <div className="stat-card-neutral p-5 rounded-2xl flex flex-col justify-between card-entrance stagger-4">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-slate-700 font-mono">UPCOMING EVENTS</span>
-                    <div className="w-8 h-8 rounded-xl bg-slate-200/80 flex items-center justify-center">
-                      <Calendar className="w-4 h-4 text-slate-700" />
+                    <span className="text-xs font-bold text-slate-700 dark:text-teal-300 font-mono">UPCOMING EVENTS</span>
+                    <div className="w-8 h-8 rounded-xl bg-slate-200/80 dark:bg-teal-900/50 flex items-center justify-center">
+                      <Calendar className="w-4 h-4 text-slate-700 dark:text-teal-300" />
                     </div>
                   </div>
                   <div className="mt-4">
-                    <p className="text-2xl font-extrabold text-slate-900 font-mono">
+                    <p className="text-2xl font-extrabold text-slate-900 dark:text-teal-100 font-mono">
                       <AnimatedCounter
                         value={upcomingEvents.length}
                         suffix=" Active"
                       />
                     </p>
-                    <p className="text-[11px] text-slate-600 font-medium mt-1">
+                    <p className="text-[11px] text-slate-600 dark:text-teal-200/90 font-medium mt-1">
                       {pendingRSVPs > 0 ? `${pendingRSVPs} RSVPs pending verification` : "All RSVPs reconciled"}
                     </p>
                   </div>
@@ -267,6 +267,7 @@ export default function DashboardPage() {
                       <div className="space-y-3">
                         {upcomingEvents.slice(0, 3).map((ev) => {
                           const evDate = new Date(ev.event_date);
+                          const userRsvp = user && ev.rsvps?.find(r => r.user_id === user.id || r.flat_number.toLowerCase() === user.flat_number.toLowerCase());
                           const isFree =
                             (ev.fee_adult || ev.fee_per_person || 0) === 0 &&
                             (ev.fee_child || 0) === 0 &&
@@ -276,26 +277,41 @@ export default function DashboardPage() {
                             <Link
                               key={ev.id}
                               href="/events"
-                              className="flex items-center gap-4 p-4 rounded-2xl bg-slate-50/80 hover:bg-white border border-slate-200/80 hover:border-emerald-300 hover:shadow-md transition-all group"
+                              className="flex items-center gap-4 p-4 rounded-2xl bg-[#f8fafc] hover:bg-white dark:bg-[#211d19] dark:hover:bg-[#2a2420] border border-[#e2e8f0] hover:border-amber-400 dark:border-[#38322c] dark:hover:border-amber-500/50 hover:shadow-md transition-all group"
                             >
                               {/* Date Block */}
-                              <div className="w-12 h-12 rounded-xl bg-white border border-slate-200 flex flex-col items-center justify-center shrink-0 shadow-sm">
-                                <span className="text-[9px] font-bold text-rose-600 uppercase">
+                              <div className="w-12 h-12 rounded-xl bg-white dark:bg-[#171412] border border-[#e2e8f0] dark:border-[#38322c] flex flex-col items-center justify-center shrink-0 shadow-sm">
+                                <span className="text-[9px] font-bold text-rose-600 dark:text-rose-400 uppercase">
                                   {evDate.toLocaleDateString("en-IN", { month: "short" })}
                                 </span>
-                                <span className="text-base font-extrabold text-slate-900 leading-none">
+                                <span className="text-base font-extrabold text-slate-900 dark:text-stone-100 leading-none">
                                   {evDate.getDate()}
                                 </span>
                               </div>
 
                               <div className="flex-1 min-w-0">
-                                <h3 className="text-sm font-bold text-slate-900 group-hover:text-emerald-700 truncate">
-                                  {ev.title}
+                                <h3 className="text-sm font-bold text-slate-900 dark:text-stone-100 group-hover:text-amber-600 dark:group-hover:text-amber-400 truncate flex items-center gap-2">
+                                  <span>{ev.title}</span>
+                                  {userRsvp && userRsvp.status === "approved" && (
+                                    <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/70 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-700 shrink-0">
+                                      🎟️ Ticket QR Ready
+                                    </span>
+                                  )}
+                                  {userRsvp && userRsvp.status === "pending" && (
+                                    <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-950/70 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-700 shrink-0">
+                                      ⏳ RSVP Pending
+                                    </span>
+                                  )}
+                                  {userRsvp && userRsvp.status === "rejected" && (
+                                    <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-rose-100 dark:bg-rose-950/70 text-rose-800 dark:text-rose-300 border border-rose-200 dark:border-rose-700 shrink-0">
+                                      ❌ RSVP Rejected
+                                    </span>
+                                  )}
                                 </h3>
-                                <p className="text-xs text-slate-500 flex items-center gap-2 mt-0.5 truncate">
+                                <p className="text-xs text-slate-500 dark:text-stone-400 flex items-center gap-2 mt-0.5 truncate">
                                   <span>{ev.venue || "Clubhouse"}</span>
                                   <span>•</span>
-                                  <span className="font-semibold text-slate-700">
+                                  <span className="font-semibold text-slate-700 dark:text-stone-300">
                                     {ev.total_attendees} Confirmed Attendees
                                   </span>
                                 </p>
@@ -303,9 +319,9 @@ export default function DashboardPage() {
 
                               <div className="shrink-0 text-right">
                                 {isFree ? (
-                                  <span className="badge bg-emerald-100 text-emerald-800">Free</span>
+                                  <span className="badge bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800">Free</span>
                                 ) : (
-                                  <span className="text-xs font-extrabold text-slate-900 font-mono">
+                                  <span className="text-xs font-extrabold text-slate-900 dark:text-stone-100 font-mono">
                                     {formatINR(ev.fee_adult || ev.fee_per_person || 0)}
                                   </span>
                                 )}

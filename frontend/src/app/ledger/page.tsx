@@ -409,13 +409,13 @@ export default function LedgerPage() {
 
             {/* Search */}
             <div className="relative min-w-[200px]">
-              <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+              <Search className="w-3.5 h-3.5 text-stone-400 dark:text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search transactions..."
-                className="form-input pl-8 text-xs py-1.5"
+                className="form-input form-input-search text-xs py-1.5"
               />
             </div>
           </div>

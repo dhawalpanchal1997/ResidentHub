@@ -201,13 +201,13 @@ export default function VendorsPage() {
 
         {/* Search Input */}
         <div className="relative min-w-[240px]">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+          <Search className="w-4 h-4 text-stone-400 dark:text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search vendor name, skill..."
-            className="form-input pl-9 text-xs py-2"
+            className="form-input form-input-search text-xs py-2"
           />
         </div>
       </div>

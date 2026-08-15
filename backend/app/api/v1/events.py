@@ -218,12 +218,17 @@ async def submit_rsvp(
     if event.event_date < datetime.utcnow():
         raise HTTPException(status_code=400, detail="Cannot submit RSVP for an event that has already passed.")
 
-    # Check if user already RSVP'd
+    # Check if user already RSVP'd (allow re-submission if previously rejected)
     existing_rsvp = await db.execute(
         select(EventRSVP).where(EventRSVP.event_id == event_id, EventRSVP.user_id == current_user.id)
     )
-    if existing_rsvp.scalars().first():
-        raise HTTPException(status_code=400, detail="You have already submitted an RSVP for this event.")
+    prev_rsvp = existing_rsvp.scalars().first()
+    if prev_rsvp:
+        if prev_rsvp.status in ["pending", "approved"]:
+            raise HTTPException(status_code=400, detail="You already have an active RSVP for this event.")
+        # If previously rejected, remove the rejected record and proceed with fresh submission
+        await db.delete(prev_rsvp)
+        await db.flush()
 
     # Enforce mandatory UPI UTR / Transaction Reference for paid RSVPs
     if float(rsvp_in.total_amount or 0) > 0 and (not rsvp_in.utr_number or not rsvp_in.utr_number.strip()):
