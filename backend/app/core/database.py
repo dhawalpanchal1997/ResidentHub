@@ -2,10 +2,17 @@ from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sess
 from sqlalchemy.orm import declarative_base
 from app.core.config import settings
 
-# Normalize Postgres URL for asyncpg if needed
+from pathlib import Path
+
+# Normalize Postgres URL for asyncpg or resolve SQLite to absolute path
 db_url = settings.DATABASE_URL
 if db_url.startswith("postgresql://"):
     db_url = db_url.replace("postgresql://", "postgresql+asyncpg://", 1)
+elif "sqlite" in db_url:
+    # Ensure consistent absolute path for SQLite
+    base_dir = Path(__file__).resolve().parent.parent.parent
+    db_file = base_dir / "residenthub.db"
+    db_url = f"sqlite+aiosqlite:///{db_file}"
 
 engine = create_async_engine(
     db_url,
