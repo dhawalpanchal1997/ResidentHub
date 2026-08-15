@@ -695,70 +695,101 @@ export default function IssuesHelpdeskPage() {
                 )}
               </div>
 
-              {/* Admin Management Panel */}
-              <div className="p-4 bg-amber-50/60 dark:bg-[#201a15] rounded-2xl border border-amber-300 dark:border-amber-900/60 space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-mono font-extrabold text-amber-800 dark:text-amber-400 uppercase flex items-center gap-1.5">
-                    <Wrench className="w-3.5 h-3.5" />
-                    Admin Management & Technician Assignment
-                  </span>
-                  <button
-                    onClick={() => setIssueToDelete(selectedIssue.id)}
-                    className="text-[11px] font-bold text-rose-600 hover:text-rose-700 flex items-center gap-1"
-                  >
-                    <Trash2 className="w-3 h-3" />
-                    <span>Delete Ticket</span>
-                  </button>
-                </div>
+              {/* Admin vs Resident Status & Assignment View */}
+              {isAdmin ? (
+                /* Editable Admin Management & Technician Assignment Panel */
+                <div className="p-4 bg-amber-50/60 dark:bg-[#201a15] rounded-2xl border border-amber-300 dark:border-amber-900/60 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-mono font-extrabold text-amber-800 dark:text-amber-400 uppercase flex items-center gap-1.5">
+                      <Wrench className="w-3.5 h-3.5" />
+                      Admin Management & Technician Assignment
+                    </span>
+                    <button
+                      onClick={() => setIssueToDelete(selectedIssue.id)}
+                      className="text-[11px] font-bold text-rose-600 hover:text-rose-700 flex items-center gap-1"
+                    >
+                      <Trash2 className="w-3 h-3" />
+                      <span>Delete Ticket</span>
+                    </button>
+                  </div>
 
-                <form onSubmit={handleAdminUpdateIssue} className="space-y-3">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                      <label className="form-label text-[11px]">Update Status</label>
-                      <select
-                        value={adminStatus}
-                        onChange={(e) => setAdminStatus(e.target.value)}
-                        className="form-input text-xs py-1.5"
-                      >
-                        <option value="open">Open / Triaging</option>
-                        <option value="in_progress">In Progress / Dispatched</option>
-                        <option value="resolved">Resolved</option>
-                        <option value="closed">Closed</option>
-                      </select>
+                  <form onSubmit={handleAdminUpdateIssue} className="space-y-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="form-label text-[11px]">Update Status</label>
+                        <select
+                          value={adminStatus}
+                          onChange={(e) => setAdminStatus(e.target.value)}
+                          className="form-input text-xs py-1.5"
+                        >
+                          <option value="open">Open / Triaging</option>
+                          <option value="in_progress">In Progress / Dispatched</option>
+                          <option value="resolved">Resolved</option>
+                          <option value="closed">Closed</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="form-label text-[11px]">Assign Vendor / Technician</label>
+                        <input
+                          type="text"
+                          value={adminVendor}
+                          onChange={(e) => setAdminVendor(e.target.value)}
+                          placeholder="e.g. Apex Plumbing, Schindler AMC"
+                          className="form-input text-xs py-1.5"
+                        />
+                      </div>
                     </div>
 
                     <div>
-                      <label className="form-label text-[11px]">Assign Vendor / Technician</label>
+                      <label className="form-label text-[11px]">Resolution Remarks / Work Summary</label>
                       <input
                         type="text"
-                        value={adminVendor}
-                        onChange={(e) => setAdminVendor(e.target.value)}
-                        placeholder="e.g. Apex Plumbing, Schindler AMC"
+                        value={adminNotes}
+                        onChange={(e) => setAdminNotes(e.target.value)}
+                        placeholder="e.g. Optical sensor realigned and tested on all floors..."
                         className="form-input text-xs py-1.5"
                       />
                     </div>
-                  </div>
 
-                  <div>
-                    <label className="form-label text-[11px]">Resolution Remarks / Work Summary</label>
-                    <input
-                      type="text"
-                      value={adminNotes}
-                      onChange={(e) => setAdminNotes(e.target.value)}
-                      placeholder="e.g. Optical sensor realigned and tested on all floors..."
-                      className="form-input text-xs py-1.5"
-                    />
-                  </div>
+                    <button
+                      type="submit"
+                      disabled={savingAdminUpdate}
+                      className="btn-primary text-xs py-2 px-4 font-bold shadow-sm"
+                    >
+                      {savingAdminUpdate ? "Saving..." : "Save Status & Assignment"}
+                    </button>
+                  </form>
+                </div>
+              ) : (
+                /* Resident View: Clean Read-Only Status & Assignment Card */
+                <div className="p-4 bg-stone-50 dark:bg-[#1e1814] rounded-2xl border border-stone-200 dark:border-[#383028] space-y-3">
+                  <span className="text-[10px] font-mono font-extrabold text-stone-500 uppercase tracking-wider block">
+                    Current Ticket Status & Assignment
+                  </span>
 
-                  <button
-                    type="submit"
-                    disabled={savingAdminUpdate}
-                    className="btn-primary text-xs py-2 px-4 font-bold shadow-sm"
-                  >
-                    {savingAdminUpdate ? "Saving..." : "Save Status & Assignment"}
-                  </button>
-                </form>
-              </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                    <div className="p-3 bg-white dark:bg-[#251e18] rounded-xl border border-stone-200/80 dark:border-[#383028] flex items-center justify-between">
+                      <div>
+                        <span className="text-[10px] text-stone-400 block font-mono uppercase">Ticket Status</span>
+                        <span className="font-extrabold text-stone-900 dark:text-stone-100 text-xs uppercase mt-0.5 block">
+                          {selectedIssue.status.replace("_", " ")}
+                        </span>
+                      </div>
+                      <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold ${getStatusBadge(selectedIssue.status).badgeClass}`}>
+                        {getStatusBadge(selectedIssue.status).label}
+                      </span>
+                    </div>
+
+                    <div className="p-3 bg-white dark:bg-[#251e18] rounded-xl border border-stone-200/80 dark:border-[#383028]">
+                      <span className="text-[10px] text-stone-400 block font-mono uppercase">Assigned Service Provider</span>
+                      <span className="font-extrabold text-emerald-700 dark:text-emerald-400 text-xs block mt-0.5 truncate">
+                        {selectedIssue.assigned_vendor_name || "⏳ Awaiting Committee Assignment"}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Real-time Activity Timeline */}
               <div className="space-y-3">
