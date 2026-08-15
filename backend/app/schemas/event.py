@@ -1,6 +1,6 @@
 from datetime import datetime, date
 from typing import Optional, List
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 class EventBase(BaseModel):
     title: str
@@ -57,8 +57,7 @@ class EventRSVPResponse(BaseModel):
     status: str
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class EventExpenseCreate(BaseModel):
     category: str  # "Catering & Food", "Decorations & Stage", "DJ & Sound", "Prizes & Gifts", "Cleaning & Housekeeping", "Misc / Supplies"
@@ -80,8 +79,7 @@ class EventExpenseResponse(BaseModel):
     logged_by: Optional[str] = None
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class EventResponse(EventBase):
     id: str
@@ -99,5 +97,4 @@ class EventResponse(EventBase):
     rsvps: Optional[List[EventRSVPResponse]] = []
     expenses: Optional[List[EventExpenseResponse]] = []
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)

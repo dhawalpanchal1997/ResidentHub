@@ -1,6 +1,6 @@
 from datetime import datetime
 from typing import Optional, List
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 
 class ReviewCreate(BaseModel):
     rating: int = Field(..., ge=1, le=5)
@@ -16,8 +16,7 @@ class ReviewResponse(BaseModel):
     comment: Optional[str] = None
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class VendorCreate(BaseModel):
     category: str  # "Electrician", "Plumber", "Doctor", "Carpenter", "Painter", "Appliance Repair", "Vendor"
@@ -34,5 +33,4 @@ class VendorResponse(VendorCreate):
     total_reviews: int = 0
     reviews: Optional[List[ReviewResponse]] = []
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
