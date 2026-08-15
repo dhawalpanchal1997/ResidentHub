@@ -1011,9 +1011,9 @@ export default function DashboardPage() {
                         </button>
                       </div>
 
-                      {/* Photo Portrait Container */}
-                      <div className="relative pt-2">
-                        <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-3xl overflow-hidden ring-4 ring-amber-400/50 shadow-md mx-auto bg-stone-100 dark:bg-stone-800">
+                      {/* Clean Photo Portrait (No overlapping badge) */}
+                      <div className="pt-1">
+                        <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-3xl overflow-hidden ring-4 ring-amber-400/40 dark:ring-amber-500/30 shadow-md mx-auto bg-stone-100 dark:bg-stone-800">
                           {leader.photo_url ? (
                             // eslint-disable-next-line @next/next/no-img-element
                             <img
@@ -1029,17 +1029,14 @@ export default function DashboardPage() {
                             </div>
                           )}
                         </div>
-
-                        {/* Flat Badge Pill */}
-                        <div className="absolute -bottom-2.5 left-1/2 transform -translate-x-1/2">
-                          <span className="px-2.5 py-0.5 rounded-full bg-stone-900 text-amber-300 border border-amber-500/40 text-[10px] font-mono font-extrabold shadow-sm tracking-wide">
-                            Flat {leader.flat_number}
-                          </span>
-                        </div>
                       </div>
 
-                      {/* Name & Role */}
-                      <div className="w-full space-y-1 pt-2">
+                      {/* Member Info: Flat Pill + Name + Designation + Badge */}
+                      <div className="w-full space-y-1 pt-1">
+                        <span className="inline-block px-2.5 py-0.5 rounded-full bg-amber-500/15 dark:bg-amber-500/20 text-amber-800 dark:text-amber-300 border border-amber-400/40 dark:border-amber-500/30 text-[10px] font-mono font-extrabold tracking-wide mb-1">
+                          Flat {leader.flat_number}
+                        </span>
+
                         <h3 className="font-extrabold text-stone-900 dark:text-stone-100 text-sm leading-tight group-hover:text-orange-600 dark:group-hover:text-orange-400 transition-colors truncate">
                           {leader.name}
                         </h3>
