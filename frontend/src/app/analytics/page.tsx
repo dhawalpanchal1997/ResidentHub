@@ -42,6 +42,9 @@ export default function AnalyticsPage() {
   const [error, setError] = useState("");
   const [activeTab, setActiveTab] = useState<"overview" | "financials" | "events" | "community">("overview");
   const [timeframe, setTimeframe] = useState<"all" | "year" | "6m">("all");
+  const [chartType, setChartType] = useState<"line" | "table">("line");
+  const [isFlipping, setIsFlipping] = useState(false);
+  const [hoveredEventIndex, setHoveredEventIndex] = useState<number | null>(null);
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -555,6 +558,403 @@ export default function AnalyticsPage() {
                 {data?.events.demographics.seniors_pct || 0}% of community footfall
               </p>
             </div>
+          </div>
+
+          {/* 📊 Society Event Demographic Participation Graph (Line Chart Default + Table Flip View) */}
+          <div className="card p-6 bg-white dark:bg-[#1b1613] border-stone-200 dark:border-[#352c24] overflow-hidden">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+              <div>
+                <h3 className="text-base font-bold text-stone-900 dark:text-stone-100 flex items-center gap-2">
+                  <TrendingUp className="w-5 h-5 text-orange-600 dark:text-orange-400" />
+                  <span>
+                    {chartType === "line"
+                      ? "Event Demographic Participation Trend (Line Chart)"
+                      : "Event Demographic Participation Matrix (Grid View)"}
+                  </span>
+                </h3>
+                <p className="text-xs text-stone-500 dark:text-stone-400 mt-1">
+                  X-Axis: Society Events • Y-Axis: Verified Headcount (Adults, Children, Seniors)
+                </p>
+              </div>
+
+              {/* Action Controls: Flip Button + Legend */}
+              <div className="flex flex-wrap items-center gap-3">
+                {/* Interactive Legend (When in Line mode) */}
+                {chartType === "line" && (
+                  <div className="flex flex-wrap items-center gap-3 text-xs font-bold bg-stone-50 dark:bg-[#201a15] px-3.5 py-1.5 rounded-xl border border-stone-200 dark:border-[#352c24]">
+                    <span className="flex items-center gap-1.5 text-stone-700 dark:text-stone-300">
+                      <div className="w-2.5 h-2.5 rounded-full bg-orange-500 ring-2 ring-orange-200 dark:ring-orange-950" />
+                      <span>Adults</span>
+                    </span>
+                    <span className="flex items-center gap-1.5 text-stone-700 dark:text-stone-300">
+                      <div className="w-2.5 h-2.5 rounded-full bg-amber-400 ring-2 ring-amber-200 dark:ring-amber-950" />
+                      <span>Children</span>
+                    </span>
+                    <span className="flex items-center gap-1.5 text-stone-700 dark:text-stone-300">
+                      <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-emerald-200 dark:ring-emerald-950" />
+                      <span>Seniors</span>
+                    </span>
+                  </div>
+                )}
+
+                {/* Single Flip Button */}
+                <button
+                  onClick={() => {
+                    setIsFlipping(true);
+                    setTimeout(() => {
+                      setChartType(prev => (prev === "line" ? "table" : "line"));
+                      setIsFlipping(false);
+                    }, 150);
+                  }}
+                  className="btn-secondary text-xs py-1.5 px-3 flex items-center gap-1.5 hover:border-orange-500 hover:text-orange-600 dark:hover:text-orange-400 transition-all shadow-xs"
+                  title={chartType === "line" ? "Flip to Table / Grid View" : "Flip to Line Chart"}
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 text-orange-600 dark:text-orange-400 ${isFlipping ? "animate-spin" : ""}`} />
+                  <span className="font-bold">
+                    {chartType === "line" ? "Flip to Table View" : "Flip to Line Chart"}
+                  </span>
+                </button>
+              </div>
+            </div>
+
+            {/* VIEW 1: INTERACTIVE MULTI-LINE TREND CHART */}
+            {chartType === "line" && (
+              <div className="relative pt-2 pb-2">
+                {(() => {
+                  const eventsList = data?.events.performance || [];
+                  const maxCount = Math.max(
+                    ...eventsList.map(e => Math.max(e.adults || 0, e.children || 0, e.seniors || 0, e.attendees || 0)),
+                    6
+                  );
+                  const chartMax = Math.ceil(maxCount / 2) * 2;
+                  const svgWidth = 840;
+                  const svgHeight = 240;
+                  const padLeft = 45;
+                  const padRight = 45;
+                  const padTop = 25;
+                  const padBottom = 45;
+                  const chartW = svgWidth - padLeft - padRight;
+                  const chartH = svgHeight - padTop - padBottom;
+
+                  const getX = (idx: number) => {
+                    if (eventsList.length <= 1) return padLeft + chartW / 2;
+                    return padLeft + (idx / (eventsList.length - 1)) * chartW;
+                  };
+
+                  const getY = (val: number) => {
+                    return padTop + chartH - (Math.min(val, chartMax) / chartMax) * chartH;
+                  };
+
+                  const adultPoints = eventsList.map((e, i) => `${getX(i)},${getY(e.adults || 0)}`).join(" ");
+                  const childPoints = eventsList.map((e, i) => `${getX(i)},${getY(e.children || 0)}`).join(" ");
+                  const seniorPoints = eventsList.map((e, i) => `${getX(i)},${getY(e.seniors || 0)}`).join(" ");
+
+                  return (
+                    <div className="overflow-x-auto min-w-[600px]">
+                      <svg viewBox={`0 0 ${svgWidth} ${svgHeight}`} className="w-full h-auto overflow-visible select-none">
+                        <defs>
+                          <linearGradient id="adultGrad" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stopColor="#ea580c" stopOpacity="0.25" />
+                            <stop offset="100%" stopColor="#ea580c" stopOpacity="0.0" />
+                          </linearGradient>
+                          <linearGradient id="childGrad" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stopColor="#f59e0b" stopOpacity="0.25" />
+                            <stop offset="100%" stopColor="#f59e0b" stopOpacity="0.0" />
+                          </linearGradient>
+                          <linearGradient id="seniorGrad" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stopColor="#10b981" stopOpacity="0.25" />
+                            <stop offset="100%" stopColor="#10b981" stopOpacity="0.0" />
+                          </linearGradient>
+                        </defs>
+
+                        {/* Horizontal Gridlines & Y-Axis Labels */}
+                        {[0, 0.25, 0.5, 0.75, 1].map((pct, i) => {
+                          const y = padTop + chartH * (1 - pct);
+                          const val = Math.round(chartMax * pct);
+                          return (
+                            <g key={i}>
+                              <line
+                                x1={padLeft}
+                                y1={y}
+                                x2={svgWidth - padRight}
+                                y2={y}
+                                stroke="currentColor"
+                                strokeDasharray={pct === 0 ? "none" : "3,3"}
+                                className="text-stone-200 dark:text-[#383028]"
+                                strokeWidth={pct === 0 ? "1.5" : "1"}
+                              />
+                              <text
+                                x={padLeft - 10}
+                                y={y + 3.5}
+                                textAnchor="end"
+                                className="text-[10px] font-mono fill-stone-400"
+                              >
+                                {val}
+                              </text>
+                            </g>
+                          );
+                        })}
+
+                        {/* Area fills */}
+                        {eventsList.length > 1 && (
+                          <>
+                            <polygon
+                              points={`${padLeft},${getY(0)} ${adultPoints} ${getX(eventsList.length - 1)},${getY(0)}`}
+                              fill="url(#adultGrad)"
+                            />
+                            <polygon
+                              points={`${padLeft},${getY(0)} ${childPoints} ${getX(eventsList.length - 1)},${getY(0)}`}
+                              fill="url(#childGrad)"
+                            />
+                            <polygon
+                              points={`${padLeft},${getY(0)} ${seniorPoints} ${getX(eventsList.length - 1)},${getY(0)}`}
+                              fill="url(#seniorGrad)"
+                            />
+                          </>
+                        )}
+
+                        {/* Polylines */}
+                        {eventsList.length > 1 && (
+                          <>
+                            {/* Adult Line */}
+                            <polyline
+                              points={adultPoints}
+                              fill="none"
+                              stroke="#ea580c"
+                              strokeWidth="3.5"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            />
+                            {/* Child Line */}
+                            <polyline
+                              points={childPoints}
+                              fill="none"
+                              stroke="#f59e0b"
+                              strokeWidth="3.5"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            />
+                            {/* Senior Line */}
+                            <polyline
+                              points={seniorPoints}
+                              fill="none"
+                              stroke="#10b981"
+                              strokeWidth="3.5"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            />
+                          </>
+                        )}
+
+                        {/* Vertical Guides & Data Points */}
+                        {eventsList.map((ev, i) => {
+                          const x = getX(i);
+                          const isHovered = hoveredEventIndex === i;
+
+                          return (
+                            <g
+                              key={i}
+                              onMouseEnter={() => setHoveredEventIndex(i)}
+                              onMouseLeave={() => setHoveredEventIndex(null)}
+                              className="cursor-pointer"
+                            >
+                              {/* Hover Guide Line */}
+                              <line
+                                x1={x}
+                                y1={padTop}
+                                x2={x}
+                                y2={padTop + chartH}
+                                stroke="#f97316"
+                                strokeWidth={isHovered ? "2" : "1"}
+                                strokeDasharray={isHovered ? "none" : "2,2"}
+                                opacity={isHovered ? 0.7 : 0.25}
+                              />
+
+                              {/* Adult Node */}
+                              <circle
+                                cx={x}
+                                cy={getY(ev.adults || 0)}
+                                r={isHovered ? 6.5 : 5}
+                                fill="#ea580c"
+                                stroke="#ffffff"
+                                strokeWidth={isHovered ? "2.5" : "2"}
+                                className="transition-all duration-200"
+                              />
+
+                              {/* Child Node */}
+                              <circle
+                                cx={x}
+                                cy={getY(ev.children || 0)}
+                                r={isHovered ? 6.5 : 5}
+                                fill="#f59e0b"
+                                stroke="#ffffff"
+                                strokeWidth={isHovered ? "2.5" : "2"}
+                                className="transition-all duration-200"
+                              />
+
+                              {/* Senior Node */}
+                              <circle
+                                cx={x}
+                                cy={getY(ev.seniors || 0)}
+                                r={isHovered ? 6.5 : 5}
+                                fill="#10b981"
+                                stroke="#ffffff"
+                                strokeWidth={isHovered ? "2.5" : "2"}
+                                className="transition-all duration-200"
+                              />
+
+                              {/* X-Axis Event Labels */}
+                              <text
+                                x={x}
+                                y={padTop + chartH + 18}
+                                textAnchor="middle"
+                                className={`text-[11px] font-bold ${
+                                  isHovered
+                                    ? "fill-orange-600 dark:fill-orange-400 font-extrabold"
+                                    : "fill-stone-800 dark:fill-stone-200"
+                                }`}
+                              >
+                                {ev.title.length > 14 ? ev.title.slice(0, 13) + "…" : ev.title}
+                              </text>
+                              <text
+                                x={x}
+                                y={padTop + chartH + 32}
+                                textAnchor="middle"
+                                className="text-[9px] font-mono fill-stone-400"
+                              >
+                                {ev.attendees} Passes
+                              </text>
+                            </g>
+                          );
+                        })}
+                      </svg>
+
+                      {/* Interactive Hover Tooltip Box */}
+                      {hoveredEventIndex !== null && eventsList[hoveredEventIndex] && (
+                        <div className="mt-3 p-3.5 rounded-2xl bg-stone-900 text-white dark:bg-[#2a221b] border border-stone-700 dark:border-[#45392e] shadow-xl flex flex-wrap items-center justify-between gap-4 animate-in fade-in zoom-in-95 duration-150 text-xs">
+                          <div>
+                            <span className="font-extrabold text-amber-300 text-sm block">
+                              {eventsList[hoveredEventIndex].title}
+                            </span>
+                            <span className="text-[11px] text-stone-300 font-mono">
+                              {eventsList[hoveredEventIndex].date} • {eventsList[hoveredEventIndex].venue}
+                            </span>
+                          </div>
+
+                          <div className="flex items-center gap-4 font-mono">
+                            <span className="flex items-center gap-1.5 text-orange-300 font-bold">
+                              <div className="w-2.5 h-2.5 rounded-full bg-orange-500" />
+                              Adults: {eventsList[hoveredEventIndex].adults || 0}
+                            </span>
+                            <span className="flex items-center gap-1.5 text-amber-300 font-bold">
+                              <div className="w-2.5 h-2.5 rounded-full bg-amber-400" />
+                              Children: {eventsList[hoveredEventIndex].children || 0}
+                            </span>
+                            <span className="flex items-center gap-1.5 text-emerald-300 font-bold">
+                              <div className="w-2.5 h-2.5 rounded-full bg-emerald-400" />
+                              Seniors: {eventsList[hoveredEventIndex].seniors || 0}
+                            </span>
+                            <span className="px-2 py-0.5 rounded-full bg-white/10 text-white font-extrabold">
+                              Total: {eventsList[hoveredEventIndex].attendees}
+                            </span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
+              </div>
+            )}
+
+            {/* VIEW 2: FLIP TABLE / GRID VIEW */}
+            {chartType === "table" && (
+              <div className="overflow-x-auto pt-2 pb-2">
+                <table className="w-full text-xs text-left">
+                  <thead className="bg-stone-50 dark:bg-[#201a15] text-stone-500 dark:text-stone-400 uppercase font-mono text-[10px]">
+                    <tr>
+                      <th className="py-3 px-4 rounded-l-xl">Event Title & Details</th>
+                      <th className="py-3 px-4 text-center">
+                        <span className="inline-flex items-center gap-1 text-orange-700 dark:text-orange-400">
+                          <div className="w-2 h-2 rounded-full bg-orange-500" />
+                          Adults (18-60y)
+                        </span>
+                      </th>
+                      <th className="py-3 px-4 text-center">
+                        <span className="inline-flex items-center gap-1 text-amber-700 dark:text-amber-400">
+                          <div className="w-2 h-2 rounded-full bg-amber-400" />
+                          Children (&lt;18y)
+                        </span>
+                      </th>
+                      <th className="py-3 px-4 text-center">
+                        <span className="inline-flex items-center gap-1 text-emerald-700 dark:text-emerald-400">
+                          <div className="w-2 h-2 rounded-full bg-emerald-500" />
+                          Senior Citizens (&gt;60y)
+                        </span>
+                      </th>
+                      <th className="py-3 px-4 text-right rounded-r-xl">Total Footfall</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-stone-100 dark:divide-[#2d251e]">
+                    {data?.events.performance.map((ev) => {
+                      const tot = Math.max(ev.attendees || 0, 1);
+                      const aPct = Math.round(((ev.adults || 0) / tot) * 100);
+                      const cPct = Math.round(((ev.children || 0) / tot) * 100);
+                      const sPct = Math.round(((ev.seniors || 0) / tot) * 100);
+
+                      return (
+                        <tr key={ev.id} className="hover:bg-stone-50/50 dark:hover:bg-[#221c17] transition-colors">
+                          <td className="py-3.5 px-4">
+                            <span className="font-extrabold text-stone-900 dark:text-stone-100 block text-xs">
+                              {ev.title}
+                            </span>
+                            <span className="text-[11px] text-stone-500 dark:text-stone-400 font-mono">
+                              {ev.date} • {ev.venue}
+                            </span>
+                          </td>
+
+                          {/* Adults */}
+                          <td className="py-3.5 px-4 text-center font-mono">
+                            <span className="font-bold text-stone-900 dark:text-stone-100 text-sm">
+                              {ev.adults || 0}
+                            </span>
+                            <span className="text-[10px] text-orange-600 dark:text-orange-400 block font-semibold">
+                              {aPct}%
+                            </span>
+                          </td>
+
+                          {/* Children */}
+                          <td className="py-3.5 px-4 text-center font-mono">
+                            <span className="font-bold text-stone-900 dark:text-stone-100 text-sm">
+                              {ev.children || 0}
+                            </span>
+                            <span className="text-[10px] text-amber-600 dark:text-amber-400 block font-semibold">
+                              {cPct}%
+                            </span>
+                          </td>
+
+                          {/* Seniors */}
+                          <td className="py-3.5 px-4 text-center font-mono">
+                            <span className="font-bold text-stone-900 dark:text-stone-100 text-sm">
+                              {ev.seniors || 0}
+                            </span>
+                            <span className="text-[10px] text-emerald-600 dark:text-emerald-400 block font-semibold">
+                              {sPct}%
+                            </span>
+                          </td>
+
+                          {/* Total */}
+                          <td className="py-3.5 px-4 text-right font-mono">
+                            <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-stone-100 dark:bg-[#282019] text-stone-900 dark:text-stone-100 font-extrabold text-xs">
+                              {ev.attendees} Passes
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
 
           {/* RSVP Status Funnel */}

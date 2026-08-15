@@ -579,6 +579,9 @@ export interface AnalyticsOverviewData {
       date: string;
       venue: string;
       attendees: number;
+      adults: number;
+      children: number;
+      seniors: number;
       collection: number;
       expense: number;
       net_balance: number;

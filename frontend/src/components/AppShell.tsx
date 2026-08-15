@@ -182,30 +182,30 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         />
       )}
 
-      {/* Slide-in Navigation Drawer (Default Closed) */}
+      {/* Slide-in Navigation Drawer (Liquid Glassmorphism UI) */}
       <aside
-        className={`fixed top-0 left-0 z-50 h-screen w-[290px] bg-stone-950 text-stone-200 flex flex-col transition-transform duration-300 ease-in-out border-r border-stone-800 shadow-2xl ${
+        className={`fixed top-0 left-0 z-50 h-screen w-[295px] bg-white/80 dark:bg-[#120e0b]/85 backdrop-blur-2xl backdrop-saturate-150 text-stone-800 dark:text-stone-200 flex flex-col transition-transform duration-300 ease-in-out border-r border-white/60 dark:border-white/10 shadow-[0_8px_32px_0_rgba(0,0,0,0.12)] dark:shadow-[0_8px_32px_0_rgba(0,0,0,0.6)] ${
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        {/* Brand Header */}
-        <div className="p-5 border-b border-stone-800 flex items-center justify-between">
+        {/* Glass Brand Header */}
+        <div className="p-5 border-b border-white/60 dark:border-white/10 bg-white/40 dark:bg-white/5 backdrop-blur-xl flex items-center justify-between">
           <Link
             href="/"
             onClick={() => setSidebarOpen(false)}
             className="flex items-center gap-3 group"
           >
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-orange-600 via-amber-500 to-yellow-400 flex items-center justify-center shadow-lg shadow-orange-600/30 text-white shrink-0">
+            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-orange-600 via-amber-500 to-yellow-400 flex items-center justify-center shadow-lg shadow-orange-600/30 text-white shrink-0 group-hover:scale-105 transition-transform">
               <span className="text-lg">🪔</span>
             </div>
             <div>
-              <h1 className="text-base font-bold text-white tracking-tight flex items-center gap-1.5">
+              <h1 className="text-base font-extrabold text-stone-900 dark:text-white tracking-tight flex items-center gap-1.5">
                 ResidentHub
-                <span className="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-400 font-semibold border border-amber-500/30">
+                <span className="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-700 dark:text-amber-400 font-bold border border-amber-500/30">
                   CHS
                 </span>
               </h1>
-              <p className="text-[11px] text-amber-200/70 font-medium truncate max-w-[140px]">
+              <p className="text-[11px] text-orange-700/80 dark:text-amber-200/70 font-semibold truncate max-w-[140px]">
                 Runwal Gardens T24
               </p>
             </div>
@@ -214,18 +214,18 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           {/* Close Drawer Button */}
           <button
             onClick={() => setSidebarOpen(false)}
-            className="p-1.5 rounded-xl text-stone-400 hover:text-white hover:bg-stone-800 transition-all"
+            className="p-1.5 rounded-xl text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white hover:bg-white/60 dark:hover:bg-white/10 transition-all"
             title="Close Menu"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Navigation Menu */}
+        {/* Glassmorphic Navigation Menu */}
         <nav className="flex-1 px-3.5 py-5 space-y-1.5 overflow-y-auto">
-          <div className="px-3 pb-2 text-[10px] font-bold text-stone-400 uppercase tracking-wider font-mono flex items-center justify-between">
+          <div className="px-3 pb-2 text-[10px] font-extrabold text-stone-500 dark:text-stone-400 uppercase tracking-wider font-mono flex items-center justify-between">
             <span>Society Modules</span>
-            <span className="text-[10px] text-amber-400">✨ 96 Flats</span>
+            <span className="text-[10px] text-orange-600 dark:text-amber-400 font-bold bg-orange-50 dark:bg-amber-950/60 px-2 py-0.5 rounded-full border border-orange-200 dark:border-amber-900/50">✨ 96 Flats</span>
           </div>
 
           {NAV_ITEMS.map((item) => {
@@ -236,20 +236,22 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                 key={item.href}
                 href={item.href}
                 onClick={() => setSidebarOpen(false)}
-                className={`flex items-center justify-between px-3.5 py-2.5 rounded-2xl text-sm font-semibold transition-all ${
+                className={`flex items-center justify-between px-3.5 py-2.5 rounded-2xl text-sm font-bold transition-all duration-200 ${
                   active
-                    ? "bg-gradient-to-r from-orange-500/20 to-amber-500/10 text-amber-300 border border-amber-500/30 shadow-sm"
-                    : "text-stone-400 hover:text-stone-100 hover:bg-stone-900"
+                    ? "bg-gradient-to-r from-orange-500/15 via-amber-500/15 to-orange-500/5 backdrop-blur-xl text-orange-700 dark:text-amber-300 border border-orange-500/30 shadow-xs"
+                    : "text-stone-700 dark:text-stone-300 hover:text-stone-900 dark:hover:text-white hover:bg-white/60 dark:hover:bg-white/10 hover:backdrop-blur-md"
                 }`}
               >
                 <div className="flex items-center gap-3">
-                  <Icon className={`w-4 h-4 ${active ? "text-amber-400" : "text-stone-400"}`} />
+                  <Icon className={`w-4 h-4 ${active ? "text-orange-600 dark:text-amber-400" : "text-stone-500 dark:text-stone-400"}`} />
                   <span>{item.label}</span>
                 </div>
                 {item.badge && (
                   <span
-                    className={`text-[10px] font-mono font-bold px-1.5 py-0.5 rounded ${
-                      active ? "bg-amber-500/20 text-amber-300" : "bg-stone-800 text-stone-400"
+                    className={`text-[10px] font-mono font-extrabold px-2 py-0.5 rounded-full ${
+                      active
+                        ? "bg-orange-500/20 text-orange-700 dark:text-amber-300 border border-orange-400/30"
+                        : "bg-stone-200/80 dark:bg-white/10 text-stone-600 dark:text-stone-400"
                     }`}
                   >
                     {item.badge}
@@ -260,29 +262,29 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           })}
         </nav>
 
-        {/* Drawer Footer Status & Theme Switcher */}
-        <div className="p-4 border-t border-stone-800 bg-stone-950/80 space-y-3">
-          <div className="flex items-center justify-between p-2 rounded-xl bg-stone-900 border border-stone-800">
-            <span className="text-xs text-stone-400 font-medium flex items-center gap-1.5">
-              {theme === "dark" ? <Moon className="w-3.5 h-3.5 text-amber-400" /> : <Sun className="w-3.5 h-3.5 text-orange-400" />}
-              {theme === "dark" ? "Dark Theme Active" : "Light Theme Active"}
+        {/* Glassmorphic Drawer Footer */}
+        <div className="p-4 border-t border-white/60 dark:border-white/10 bg-white/40 dark:bg-white/5 backdrop-blur-xl space-y-3">
+          <div className="flex items-center justify-between p-2.5 rounded-xl bg-white/60 dark:bg-white/5 border border-white/70 dark:border-white/10 shadow-xs">
+            <span className="text-xs text-stone-700 dark:text-stone-300 font-semibold flex items-center gap-2">
+              {theme === "dark" ? <Moon className="w-3.5 h-3.5 text-amber-400" /> : <Sun className="w-3.5 h-3.5 text-orange-500" />}
+              {theme === "dark" ? "Dark Mode" : "Light Mode"}
             </span>
             <button
               onClick={toggleTheme}
-              className="p-1 px-2.5 rounded-lg bg-stone-800 hover:bg-stone-700 text-stone-200 text-xs font-semibold transition-all"
+              className="p-1 px-2.5 rounded-lg bg-stone-200/80 dark:bg-stone-800 hover:bg-stone-300 dark:hover:bg-stone-700 text-stone-800 dark:text-stone-200 text-xs font-bold transition-all shadow-xs"
             >
               Toggle
             </button>
           </div>
 
           {user ? (
-            <div className="p-3 rounded-2xl bg-stone-900 border border-stone-800 flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-300 font-bold text-xs shrink-0">
+            <div className="p-3 rounded-2xl bg-white/60 dark:bg-white/5 border border-white/70 dark:border-white/10 flex items-center gap-3 shadow-xs">
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-500/20 to-orange-500/20 border border-amber-500/40 flex items-center justify-center text-amber-700 dark:text-amber-300 font-extrabold text-xs shrink-0">
                 {user.full_name.charAt(0)}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-xs font-bold text-white truncate">{user.full_name}</p>
-                <p className="text-[11px] text-stone-400 truncate">Flat {user.flat_number} • {userResidencyType}</p>
+                <p className="text-xs font-extrabold text-stone-900 dark:text-white truncate">{user.full_name}</p>
+                <p className="text-[11px] text-stone-500 dark:text-stone-400 font-medium truncate">Flat {user.flat_number} • {userResidencyType}</p>
               </div>
             </div>
           ) : (
@@ -292,7 +294,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                 setShowAuth(true);
                 setSidebarOpen(false);
               }}
-              className="btn-primary w-full py-2 text-xs"
+              className="btn-primary w-full py-2 text-xs font-bold shadow-md shadow-orange-600/10"
             >
               <LogIn className="w-3.5 h-3.5 mr-1" />
               Sign In / Demo Access
