@@ -132,14 +132,25 @@ export default function VendorsPage() {
     }
   };
 
-  const handleDeleteVendor = async (id: string) => {
-    if (!confirm("Are you sure you want to remove this vendor?")) return;
+  const [confirmDeleteVendorId, setConfirmDeleteVendorId] = useState<string | null>(null);
+  const [isDeletingVendor, setIsDeletingVendor] = useState(false);
+
+  const handleDeleteVendor = (id: string) => {
+    setConfirmDeleteVendorId(id);
+  };
+
+  const confirmDeleteVendor = async () => {
+    if (!confirmDeleteVendorId) return;
+    setIsDeletingVendor(true);
     try {
-      await deleteVendor(id);
+      await deleteVendor(confirmDeleteVendorId);
       showFeedback("success", "Vendor removed!");
+      setConfirmDeleteVendorId(null);
       await loadVendors();
     } catch (err: any) {
       showFeedback("error", err.message);
+    } finally {
+      setIsDeletingVendor(false);
     }
   };
 
@@ -529,6 +540,43 @@ export default function VendorsPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* 🗑️ IN-APP DELETE VENDOR MODAL */}
+      {confirmDeleteVendorId && (
+        <div className="modal-backdrop z-50 animate-fade-in">
+          <div className="modal-content max-w-sm text-center p-6 space-y-4 animate-scale-in">
+            <div className="w-12 h-12 rounded-2xl bg-rose-100 dark:bg-rose-950/80 text-rose-600 dark:text-rose-400 flex items-center justify-center mx-auto shadow-sm">
+              <Trash2 className="w-6 h-6" />
+            </div>
+            <div>
+              <h3 className="text-base font-extrabold text-stone-900 dark:text-white">
+                Remove Service Provider?
+              </h3>
+              <p className="text-xs text-stone-500 dark:text-stone-400 mt-1">
+                Are you sure you want to remove this verified provider profile and all resident reviews from the society directory?
+              </p>
+            </div>
+            <div className="flex items-center justify-center gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setConfirmDeleteVendorId(null)}
+                className="btn-ghost py-2 px-4 text-xs font-bold"
+                disabled={isDeletingVendor}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={confirmDeleteVendor}
+                disabled={isDeletingVendor}
+                className="btn-danger py-2 px-4 text-xs font-bold shadow-md shadow-rose-600/20"
+              >
+                {isDeletingVendor ? "Removing..." : "Remove Provider"}
+              </button>
+            </div>
           </div>
         </div>
       )}

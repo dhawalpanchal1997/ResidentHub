@@ -172,15 +172,28 @@ export default function EventsPage() {
     }
   };
 
-  const handleDeleteEvent = async (eventId: string) => {
-    if (!confirm("Are you sure you want to delete this event? This will remove all RSVPs and expenses for this event.")) return;
+  const [confirmDeleteEventId, setConfirmDeleteEventId] = useState<string | null>(null);
+  const [confirmDeleteExpenseId, setConfirmDeleteExpenseId] = useState<string | null>(null);
+  const [isDeletingEvent, setIsDeletingEvent] = useState(false);
+  const [isDeletingExpense, setIsDeletingExpense] = useState(false);
+
+  const handleDeleteEvent = (eventId: string) => {
+    setConfirmDeleteEventId(eventId);
+  };
+
+  const confirmDeleteEvent = async () => {
+    if (!confirmDeleteEventId) return;
+    setIsDeletingEvent(true);
     try {
-      await deleteEvent(eventId);
-      if (editEvent?.id === eventId) setEditEvent(null);
+      await deleteEvent(confirmDeleteEventId);
+      if (editEvent?.id === confirmDeleteEventId) setEditEvent(null);
       showFeedback("success", "Event deleted!");
+      setConfirmDeleteEventId(null);
       await loadEvents();
     } catch (err: any) {
       showFeedback("error", err.message);
+    } finally {
+      setIsDeletingEvent(false);
     }
   };
 
@@ -306,9 +319,15 @@ export default function EventsPage() {
     }
   };
 
-  const handleDeleteExpense = async (expenseId: string) => {
-    if (!confirm("Are you sure you want to delete this expense?")) return;
+  const handleDeleteExpense = (expenseId: string) => {
+    setConfirmDeleteExpenseId(expenseId);
+  };
+
+  const confirmDeleteExpense = async () => {
+    if (!confirmDeleteExpenseId) return;
+    setIsDeletingExpense(true);
     try {
+      const expenseId = confirmDeleteExpenseId;
       setEvents((prev) =>
         prev.map((ev) => {
           if (!ev.expenses?.some((e) => e.id === expenseId)) return ev;
@@ -328,10 +347,13 @@ export default function EventsPage() {
 
       await deleteEventExpense(expenseId);
       showFeedback("success", "Expense deleted! Total expenses & P&L recalculated.");
+      setConfirmDeleteExpenseId(null);
       await loadEvents();
     } catch (err: any) {
       showFeedback("error", err.message);
       await loadEvents();
+    } finally {
+      setIsDeletingExpense(false);
     }
   };
 
@@ -1502,6 +1524,80 @@ export default function EventsPage() {
                   Done
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 🗑️ IN-APP DELETE EVENT MODAL */}
+      {confirmDeleteEventId && (
+        <div className="modal-backdrop z-50 animate-fade-in">
+          <div className="modal-content max-w-sm text-center p-6 space-y-4 animate-scale-in">
+            <div className="w-12 h-12 rounded-2xl bg-rose-100 dark:bg-rose-950/80 text-rose-600 dark:text-rose-400 flex items-center justify-center mx-auto shadow-sm">
+              <Trash2 className="w-6 h-6" />
+            </div>
+            <div>
+              <h3 className="text-base font-extrabold text-stone-900 dark:text-white">
+                Delete Festival Event?
+              </h3>
+              <p className="text-xs text-stone-500 dark:text-stone-400 mt-1">
+                Are you sure you want to delete this event? This will remove all RSVPs, headcounts, and expense records associated with it.
+              </p>
+            </div>
+            <div className="flex items-center justify-center gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setConfirmDeleteEventId(null)}
+                className="btn-ghost py-2 px-4 text-xs font-bold"
+                disabled={isDeletingEvent}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={confirmDeleteEvent}
+                disabled={isDeletingEvent}
+                className="btn-danger py-2 px-4 text-xs font-bold shadow-md shadow-rose-600/20"
+              >
+                {isDeletingEvent ? "Deleting..." : "Delete Event"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 🗑️ IN-APP DELETE EXPENSE MODAL */}
+      {confirmDeleteExpenseId && (
+        <div className="modal-backdrop z-50 animate-fade-in">
+          <div className="modal-content max-w-sm text-center p-6 space-y-4 animate-scale-in">
+            <div className="w-12 h-12 rounded-2xl bg-rose-100 dark:bg-rose-950/80 text-rose-600 dark:text-rose-400 flex items-center justify-center mx-auto shadow-sm">
+              <Trash2 className="w-6 h-6" />
+            </div>
+            <div>
+              <h3 className="text-base font-extrabold text-stone-900 dark:text-white">
+                Delete Expense Item?
+              </h3>
+              <p className="text-xs text-stone-500 dark:text-stone-400 mt-1">
+                Are you sure you want to delete this vendor expense? Event financial totals will be recalculated immediately.
+              </p>
+            </div>
+            <div className="flex items-center justify-center gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setConfirmDeleteExpenseId(null)}
+                className="btn-ghost py-2 px-4 text-xs font-bold"
+                disabled={isDeletingExpense}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={confirmDeleteExpense}
+                disabled={isDeletingExpense}
+                className="btn-danger py-2 px-4 text-xs font-bold shadow-md shadow-rose-600/20"
+              >
+                {isDeletingExpense ? "Deleting..." : "Delete Expense"}
+              </button>
             </div>
           </div>
         </div>

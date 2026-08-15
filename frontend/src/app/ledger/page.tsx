@@ -65,6 +65,9 @@ export default function LedgerPage() {
   const [isCommitting, setIsCommitting] = useState(false);
   const [commitResultMsg, setCommitResultMsg] = useState("");
 
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+
   const [feedback, setFeedback] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
   const loadData = useCallback(async () => {
@@ -87,8 +90,12 @@ export default function LedgerPage() {
     setTimeout(() => setFeedback(null), 4000);
   };
 
-  const handleCreate = async (e: React.FormEvent) => {
+  const handleCreateManual = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (newAmount <= 0) {
+      showFeedback("error", "Amount must be greater than 0");
+      return;
+    }
     setCreating(true);
     try {
       await createLedgerEntry({
@@ -98,9 +105,10 @@ export default function LedgerPage() {
         transaction_date: newDate,
         description: newDesc,
       });
-      setShowCreate(false);
-      setNewType("expense"); setNewCategory("Maintenance"); setNewAmount(0); setNewDesc("");
       showFeedback("success", "Transaction logged successfully!");
+      setShowCreate(false);
+      setNewAmount(0);
+      setNewDesc("");
       await loadData();
     } catch (err: any) {
       showFeedback("error", err.message);
@@ -110,13 +118,21 @@ export default function LedgerPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Are you sure you want to remove this ledger entry?")) return;
+    setConfirmDeleteId(id);
+  };
+
+  const confirmDeleteEntry = async () => {
+    if (!confirmDeleteId) return;
+    setIsDeleting(true);
     try {
-      await deleteLedgerEntry(id);
+      await deleteLedgerEntry(confirmDeleteId);
       showFeedback("success", "Transaction deleted!");
+      setConfirmDeleteId(null);
       await loadData();
     } catch (err: any) {
       showFeedback("error", err.message);
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -786,6 +802,43 @@ export default function LedgerPage() {
                 </button>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* 🗑️ IN-APP DELETE CONFIRMATION MODAL */}
+      {confirmDeleteId && (
+        <div className="modal-backdrop z-50 animate-fade-in">
+          <div className="modal-content max-w-sm text-center p-6 space-y-4 animate-scale-in">
+            <div className="w-12 h-12 rounded-2xl bg-rose-100 dark:bg-rose-950/80 text-rose-600 dark:text-rose-400 flex items-center justify-center mx-auto shadow-sm">
+              <Trash2 className="w-6 h-6" />
+            </div>
+            <div>
+              <h3 className="text-base font-extrabold text-stone-900 dark:text-white">
+                Delete Ledger Entry?
+              </h3>
+              <p className="text-xs text-stone-500 dark:text-stone-400 mt-1">
+                Are you sure you want to remove this transaction record from the society ledger? This action cannot be undone.
+              </p>
+            </div>
+            <div className="flex items-center justify-center gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setConfirmDeleteId(null)}
+                className="btn-ghost py-2 px-4 text-xs font-bold"
+                disabled={isDeleting}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={confirmDeleteEntry}
+                disabled={isDeleting}
+                className="btn-danger py-2 px-4 text-xs font-bold shadow-md shadow-rose-600/20"
+              >
+                {isDeleting ? "Deleting..." : "Delete Entry"}
+              </button>
+            </div>
           </div>
         </div>
       )}

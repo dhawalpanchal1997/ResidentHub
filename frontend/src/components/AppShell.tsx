@@ -685,6 +685,8 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                 <label className="form-label text-stone-800 dark:text-stone-200">Email Address *</label>
                 <input
                   type="email"
+                  name="email"
+                  autoComplete="username"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="resident@residenthub.local"
@@ -697,6 +699,8 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                 <label className="form-label text-stone-800 dark:text-stone-200">Password *</label>
                 <input
                   type="password"
+                  name="password"
+                  autoComplete={authMode === "login" ? "current-password" : "new-password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
