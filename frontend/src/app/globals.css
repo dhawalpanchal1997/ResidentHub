@@ -121,7 +121,9 @@ button, a, input, select, textarea, .card, .badge {
 
 /* Festive Card Styles (Clean steady hover with shadow only) */
 .card {
-  background: #ffffff;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   border-radius: 24px;
   border: 1px solid #eee7dd;
   box-shadow: var(--card-shadow);
